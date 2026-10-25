@@ -74,6 +74,7 @@ public class Remito {
 
         for (DetalleRemito detalle : this.detalleRemito) {
             infoDetalles.add(detalle.obtenerDocumentacion());
+            // nombre en diagrama getDocumentacion, lo cambie por creo correcion del profe
         }
 
         return infoDetalles;
@@ -81,7 +82,7 @@ public class Remito {
 
     public void aceptarRemito(LocalDateTime fechaActual, Empleado empleadoLogueado) {
         this.estado.aceptarRemito(this);
-// en diagrama cambia mientras haya documentacion por mientras hayan detalles 
+    // en diagrama cambiar mientras haya documentacion por mientras hayan detalles 
         for (DetalleRemito detalle : this.detalleRemito) {
             detalle.aceptarDocumentacion(fechaActual, empleadoLogueado);
         }

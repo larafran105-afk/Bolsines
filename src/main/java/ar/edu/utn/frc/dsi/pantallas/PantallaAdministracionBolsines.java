@@ -62,6 +62,8 @@ public class PantallaAdministracionBolsines {
     public void mostrarDatosRemitos(List<String> datosRemitos) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'mostrarDatosRemitos'");
+
+        // a implementar porque paja
     }
 
     public void solicitarOpcionRecepcion() {

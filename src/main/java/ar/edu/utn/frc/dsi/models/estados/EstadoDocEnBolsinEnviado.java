@@ -14,6 +14,7 @@ public class EstadoDocEnBolsinEnviado extends EstadoDoc{
     @Override
     public void aceptarDocumentacion(Documentacion documentacion, LocalDateTime fechaActual, Empleado empleadoLogueado,
             List<CambioEstadoDoc> cambioEstado) {
+                
             this.cambiarEstado(fechaActual, cambioEstado);
 
             EstadoDoc nuevoEstado = this.crearEstado();

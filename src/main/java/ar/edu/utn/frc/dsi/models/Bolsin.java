@@ -98,8 +98,8 @@ public class Bolsin {
         this.cambioEstadoBolsin = cambioEstadoBolsin;
     }
 
-    public boolean esTuCmDestino(ComisionMedica cmGestor) {
-        if (!this.comisionMedicaDestino.equals(cmGestor)) {
+    public boolean buscarBolsinEnviado(ComisionMedica cmGestor) {
+        if (!this.esTuCmDestino(cmGestor)) {
             return false;
         }
 
@@ -112,6 +112,10 @@ public class Bolsin {
             }
         }
         return false;
+    }
+
+    public boolean esTuCmDestino(ComisionMedica cmGestor) {
+        return this.comisionMedicaDestino.equals(cmGestor);
     }
 
     public String getCmOrigen() {
@@ -140,7 +144,7 @@ public class Bolsin {
             if (ceb.sosActual()) {
                 EstadoBolsin estadoActual = ceb.getEstado();
                 estadoActual.registrarRecepcion(this, fechaActual, empleadoLogueado, this.cambioEstadoBolsin);
-
+                break;
             }
         }
 

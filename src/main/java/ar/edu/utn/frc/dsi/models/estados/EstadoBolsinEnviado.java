@@ -42,7 +42,7 @@ public class EstadoBolsinEnviado extends EstadoBolsin {
             if (ceb.sosActual()) {
                 
                 ceb.setFechaHoraFin(fechaActual);
-                
+                break;
             }
         }
     }

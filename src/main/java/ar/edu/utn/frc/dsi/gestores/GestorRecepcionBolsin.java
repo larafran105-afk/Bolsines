@@ -45,7 +45,7 @@ public class GestorRecepcionBolsin {
         List<Bolsin> todosLosBolsines = new ArrayList<>(); // SIMULAMOS QUE TRAEMOS DE LA DB TODOS LOS BOLSINES
 
         for (Bolsin bolsin : todosLosBolsines) {
-            if (bolsin.esTuCmDestino(this.CMDestino)) {
+            if (bolsin.buscarBolsinEnviado(this.CMDestino)) {
                 this.bolsinesEnviados.add(bolsin);
 
                 String cmOrigenTemporal = bolsin.getCmOrigen();
@@ -53,6 +53,9 @@ public class GestorRecepcionBolsin {
 
                 this.pantalla.mostraCmOrigen(cmOrigenTemporal);
                 this.pantalla.mostrarNumPrecinto(nroPrecintoTemporal);
+
+                // Aca duda en cuanto a como implementar la muestra de datos (En diagrama lo
+                // muestra fuera del loop pero tendria que hacer una lista )
 
             }
         }
@@ -98,30 +101,30 @@ public class GestorRecepcionBolsin {
                 this.pantalla.mostrarMensajeExito();
                 this.finCU();
                 break;
-        
+
             default:
                 break;
         }
     }
-    
+
     private void getFechaHoraActual() {
-        
+
         this.fechaActual = LocalDateTime.now();
     }
-    
+
     private void registrarRecepcionBolsin() {
         this.bolsinSeleccionado.registrarRecepcion(this.fechaActual, this.empleadoLogueado);
-        
+
     }
-    
+
     private void notificarRec() {
         System.out.println("Ejecutando gestor del cu 29....");
     }
-    
+
     private void finCU() {
         this.bolsinSeleccionado = null;
         this.fechaActual = null;
         System.out.println("fin cu");
-    
+
     }
 }
