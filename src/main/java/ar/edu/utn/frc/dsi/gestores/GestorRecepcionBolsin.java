@@ -13,7 +13,7 @@ public class GestorRecepcionBolsin {
     private Empleado empleadoLogueado;
     private ComisionMedica CMDestino;
     private String CMOrigen;
-    private List<Bolsin> bolsinesEnviados;
+    private List<Bolsin> bolsinesEnviados = new ArrayList<>();
     private Bolsin bolsinSeleccionado;
 
     private Sesion sesionActual;
@@ -48,11 +48,12 @@ public class GestorRecepcionBolsin {
             if (bolsin.buscarBolsinEnviado(this.CMDestino)) {
                 this.bolsinesEnviados.add(bolsin);
 
-                String cmOrigenTemporal = bolsin.getCmOrigen();
-                int nroPrecintoTemporal = bolsin.getNroPrecinto();
+                // String cmOrigenTemporal = bolsin.getCmOrigen();
+                // int nroPrecintoTemporal = bolsin.getNroPrecinto();
 
-                this.pantalla.mostraCmOrigen(cmOrigenTemporal);
-                this.pantalla.mostrarNumPrecinto(nroPrecintoTemporal);
+                // this.pantalla.mostraCmOrigen(cmOrigenTemporal);
+                // this.pantalla.mostrarNumPrecinto(nroPrecintoTemporal);
+                // ----- Lo quito ahora porque estoy implementando interfaz y solo uso la lista de los bolsine --------- 
 
                 // Aca duda en cuanto a como implementar la muestra de datos (En diagrama lo
                 // muestra fuera del loop pero tendria que hacer una lista )

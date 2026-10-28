@@ -14,8 +14,7 @@ public class EstadoDocRecibidoYAceptado extends EstadoDoc{
     @Override
     public void aceptarDocumentacion(Documentacion documentacion, LocalDateTime fechaActual, Empleado empleadoLogueado,
             List<CambioEstadoDoc> cambioEstado) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'aceptarDocumentacion'");
+        throw new IllegalStateException("Ya esta recibido");
     }
     
 }
