@@ -44,15 +44,13 @@ import {
 
 /* ───────────────────────── Capa de acceso al backend ───────────────────────── */
 const USE_MOCK = false
-// const BASE_URL = '/api/recepcion-bolsin'
-const BASE_URL = 'http://localhost:8080/api/recepcion-bolsin'
+const BASE_URL = '/api/recepcion-bolsin'
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 async function http(path, body = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // el gestor mantiene la sesión del CU
     body: JSON.stringify(body)
   })
   if (!res.ok) throw new Error(`Error ${res.status}`)
