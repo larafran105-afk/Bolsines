@@ -6,7 +6,10 @@ import java.util.List;
 import ar.edu.utn.frc.dsi.models.*;
 import ar.edu.utn.frc.dsi.pantallas.PantallaAdministracionBolsines;
 import java.util.ArrayList;
+import org.springframework.stereotype.Service;
 
+
+@Service 
 public class GestorRecepcionBolsin {
 
     private LocalDateTime fechaActual;

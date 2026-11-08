@@ -4,8 +4,8 @@ import ar.edu.utn.frc.dsi.gestores.GestorRecepcionBolsin;
 import ar.edu.utn.frc.dsi.models.Bolsin;
 import ar.edu.utn.frc.dsi.models.ComisionMedica;
 import ar.edu.utn.frc.dsi.models.Sesion;
-import ar.edu.utn.frc.dsi.repositories.bolsinRepository;
-import ar.edu.utn.frc.dsi.repositories.sesionRepository;
+import ar.edu.utn.frc.dsi.repositories.BolsinRepository;
+import ar.edu.utn.frc.dsi.repositories.SesionRepository;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,8 +50,7 @@ public class PantallaAdministracionBolsines {
     }
 
     public void habilitarVentana() {
-        System.out.println("Ventana");
-        // Interefaz a implementar
+        // 
     }
 
     public void mostrarCMEmpLogueado(ComisionMedica comisionMedica) {
@@ -186,11 +184,6 @@ public class PantallaAdministracionBolsines {
         }
 
         this.gestor.tomarConfirmacion(respuesta.toUpperCase());
-
-        if ("N".equalsIgnoreCase(respuesta)) {
-            this.respuestaParaVue.put("exito", false);
-            this.respuestaParaVue.put("mensaje", "Registro cancelado.");
-        }
 
         return this.respuestaParaVue;
     }
