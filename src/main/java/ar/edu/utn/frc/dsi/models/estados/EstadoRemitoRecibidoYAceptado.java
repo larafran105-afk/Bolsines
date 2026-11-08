@@ -3,13 +3,18 @@ package ar.edu.utn.frc.dsi.models.estados;
 import ar.edu.utn.frc.dsi.models.Remito;
 import jakarta.persistence.Entity;
 
-@Entity 
+@Entity
 public class EstadoRemitoRecibidoYAceptado extends EstadoRemito {
+
+    public EstadoRemitoRecibidoYAceptado() {
+        setNombre("Recibida y Aceptada");
+        setDescripcion("...");
+    }
 
     @Override
     public void aceptarRemito(Remito remito) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'aceptarRemito'");
     }
-    
+
 }

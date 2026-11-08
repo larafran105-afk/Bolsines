@@ -5,7 +5,12 @@ import java.util.List;
 
 import ar.edu.utn.frc.dsi.models.*;
 import ar.edu.utn.frc.dsi.pantallas.PantallaAdministracionBolsines;
+import ar.edu.utn.frc.dsi.repositories.BolsinRepository;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
@@ -21,6 +26,9 @@ public class GestorRecepcionBolsin {
 
     private Sesion sesionActual;
     private PantallaAdministracionBolsines pantalla;
+    
+    @Autowired 
+    private BolsinRepository bolsinRepository;
 
     public void iniciarRegistro(Sesion sesionActual, PantallaAdministracionBolsines pantalla) {
         this.sesionActual = sesionActual;
@@ -45,7 +53,8 @@ public class GestorRecepcionBolsin {
     }
 
     private void buscarBolsinEnviado() {
-        List<Bolsin> todosLosBolsines = new ArrayList<>(); // SIMULAMOS QUE TRAEMOS DE LA DB TODOS LOS BOLSINES
+        this.bolsinesEnviados.clear();
+        List<Bolsin> todosLosBolsines = this.bolsinRepository.findAll();
 
         for (Bolsin bolsin : todosLosBolsines) {
             if (bolsin.buscarBolsinEnviado(this.CMDestino)) {
@@ -96,6 +105,7 @@ public class GestorRecepcionBolsin {
 
     }
 
+    @Transactional 
     public void tomarConfirmacion(String nextLine) {
         switch (nextLine) {
             case "S":
@@ -117,7 +127,13 @@ public class GestorRecepcionBolsin {
     }
 
     private void registrarRecepcionBolsin() {
+        this.bolsinSeleccionado = this.bolsinRepository
+        .findById(this.bolsinSeleccionado.getNroBolsin())
+        .orElseThrow();
+
         this.bolsinSeleccionado.registrarRecepcion(this.fechaActual, this.empleadoLogueado);
+
+        this.bolsinRepository.save(this.bolsinSeleccionado);
 
     }
 

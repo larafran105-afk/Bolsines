@@ -29,6 +29,9 @@ public class CambioEstadoBolsin {
     @JoinColumn(name = "id_empleado")
     private Empleado empleado;
 
+    public CambioEstadoBolsin() {
+    }
+
     public CambioEstadoBolsin(LocalDateTime fechaHoraInicio, EstadoBolsin estado, Empleado empleado, Bolsin bolsin) {
         this.fechaHoraInicio = fechaHoraInicio;
         this.estado = estado;

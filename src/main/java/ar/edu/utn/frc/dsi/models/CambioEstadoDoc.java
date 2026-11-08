@@ -11,6 +11,7 @@ import ar.edu.utn.frc.dsi.models.estados.EstadoDoc;
 public class CambioEstadoDoc {
 
     @Id
+    @GeneratedValue (strategy = GenerationType.IDENTITY)
     private int id;
 
     private LocalDateTime fechaHoraInicio;
@@ -29,6 +30,9 @@ public class CambioEstadoDoc {
 
     
     private Empleado empleado;
+
+    public CambioEstadoDoc() {
+    }
 
     public CambioEstadoDoc(LocalDateTime fechaHoraInicio, EstadoDoc estado,
             Empleado empleado, Documentacion documentacion) {

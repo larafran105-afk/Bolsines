@@ -23,10 +23,11 @@ public class DataSeedConfig implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // 1. Verificamos si ya hay datos para no duplicarlos cada vez que reiniciás el backend
+        // 1. Verificamos si ya hay datos para no duplicarlos cada vez que reiniciás el
+        // backend
         Long count = entityManager.createQuery("SELECT count(c) FROM ComisionMedica c", Long.class).getSingleResult();
         if (count > 0) {
-            return; 
+            return;
         }
 
         System.out.println("Inyectando datos de prueba para Bolsines...");
@@ -35,11 +36,11 @@ public class DataSeedConfig implements CommandLineRunner {
         ComisionMedica cmCordoba = new ComisionMedica();
         cmCordoba.setCodigo(1L);
         cmCordoba.setNombre("Comisión Médica Córdoba");
-        
+
         ComisionMedica cmMendoza = new ComisionMedica();
         cmMendoza.setCodigo(2L);
         cmMendoza.setNombre("Comisión Médica Mendoza");
-        
+
         entityManager.persist(cmCordoba);
         entityManager.persist(cmMendoza);
 
@@ -66,23 +67,47 @@ public class DataSeedConfig implements CommandLineRunner {
         // 4. Tipos de Documento
         TipoDoc tdDictamen = new TipoDoc();
         tdDictamen.setNombre("Dictamen");
-        
+
         TipoDoc tdEstudio = new TipoDoc();
         tdEstudio.setNombre("Estudio médico");
-        
+
         TipoDoc tdCarta = new TipoDoc();
         tdCarta.setNombre("Carta documento");
-        
+
         entityManager.persist(tdDictamen);
         entityManager.persist(tdEstudio);
         entityManager.persist(tdCarta);
 
         // 5. Estados (Asumiendo que las clases hijas de Estado ya son @Entity)
         EstadoBolsin estadoBolsinEnviado = new EstadoBolsinEnviado();
+        estadoBolsinEnviado.setNombre("Enviado");
+        estadoBolsinEnviado.setDescripcion("El bolsín enviado a la comision médica de destino");
         entityManager.persist(estadoBolsinEnviado);
 
         EstadoRemito estadoRemitoEnviado = new EstadoRemitoEnviado();
+        estadoRemitoEnviado.setNombre("Enviado");
+        estadoRemitoEnviado.setDescripcion("Remito enviado dentro de un bolsín");
         entityManager.persist(estadoRemitoEnviado);
+
+        EstadoBolsin estadoBolsinRecibido = new EstadoBolsinRecibidoCMDestino();
+        estadoBolsinRecibido.setNombre("Recibido en CM destino");
+        estadoBolsinRecibido.setDescripcion("...");
+        entityManager.persist(estadoBolsinRecibido);
+
+        EstadoRemito estadoRemitoAceptado = new EstadoRemitoRecibidoYAceptado();
+        estadoRemitoAceptado.setNombre("Recibida y Aceptada");
+        estadoRemitoAceptado.setDescripcion("...");
+        entityManager.persist(estadoRemitoAceptado);
+
+        EstadoDoc estadoDocEnviado = new EstadoDocEnBolsinEnviado();
+        estadoDocEnviado.setNombre("En Bolsin Enviado");
+        estadoDocEnviado.setDescripcion("...");
+        entityManager.persist(estadoDocEnviado);
+
+        EstadoDoc estadoDocAceptado = new EstadoDocRecibidoYAceptado();
+        estadoDocAceptado.setNombre("Recibido y Aceptado");
+        estadoDocAceptado.setDescripcion("...");
+        entityManager.persist(estadoDocAceptado);
 
         // 6. Bolsín 1042 (De Mendoza a Córdoba)
         Bolsin bolsin = new Bolsin();
@@ -96,22 +121,22 @@ public class DataSeedConfig implements CommandLineRunner {
 
         // Cambio de Estado del Bolsín a "Enviado"
         CambioEstadoBolsin ceb = new CambioEstadoBolsin(
-            LocalDateTime.now().minusDays(2), 
-            estadoBolsinEnviado, 
-            empLogueado, 
-            bolsin
-        );
-        // Como CEB tiene el boolean sosActual() basado en fechaHoraFin == null, no seteamos fecha fin.
+                LocalDateTime.now().minusDays(2),
+                estadoBolsinEnviado,
+                empLogueado,
+                bolsin);
+        // Como CEB tiene el boolean sosActual() basado en fechaHoraFin == null, no
+        // seteamos fecha fin.
         bolsin.getCambioEstadoBolsin().add(ceb);
-        
-        entityManager.persist(bolsin); 
+
+        entityManager.persist(bolsin);
 
         // 7. Documentación
         Documentacion doc1 = new Documentacion();
         doc1.setNroDoc(1);
         doc1.setAsunto("Dictamen médico - Exp. 44.120/26");
         doc1.setTipoDoc(tdDictamen);
-        
+
         Documentacion doc2 = new Documentacion();
         doc2.setNroDoc(2);
         doc2.setAsunto("Estudio de columna lumbosacra");
@@ -122,9 +147,32 @@ public class DataSeedConfig implements CommandLineRunner {
         doc3.setAsunto("Notificación al empleador");
         doc3.setTipoDoc(tdCarta);
 
+        doc1.setCambioEstado(new ArrayList<>());
+        doc1.getCambioEstado().add(new CambioEstadoDoc(
+                LocalDateTime.now().minusDays(2),
+                estadoDocEnviado,
+                empLogueado,
+                doc1));
+
         entityManager.persist(doc1);
+
+        doc2.setCambioEstado(new ArrayList<>());
+        doc2.getCambioEstado().add(new CambioEstadoDoc(
+                LocalDateTime.now().minusDays(2),
+                estadoDocEnviado,
+                empLogueado,
+                doc2));
+
         entityManager.persist(doc2);
-        entityManager.persist(doc3);
+
+        doc3.setCambioEstado(new ArrayList<>());
+        doc3.getCambioEstado().add(new CambioEstadoDoc(
+                LocalDateTime.now().minusDays(2),
+                estadoDocEnviado,
+                empLogueado,
+                doc3));
+        
+                entityManager.persist(doc3);
 
         // 8. Remito 3318 (Tiene Doc 1 y 2)
         Remito r1 = new Remito();
@@ -137,12 +185,12 @@ public class DataSeedConfig implements CommandLineRunner {
         dr1.setId(1);
         dr1.setRemito(r1);
         dr1.setDocumentacion(doc1);
-        
+
         DetalleRemito dr2 = new DetalleRemito();
         dr2.setId(2);
         dr2.setRemito(r1);
         dr2.setDocumentacion(doc2);
-        
+
         r1.getDetalleRemito().add(dr1);
         r1.getDetalleRemito().add(dr2);
         entityManager.persist(r1);
@@ -158,10 +206,10 @@ public class DataSeedConfig implements CommandLineRunner {
         dr3.setId(3);
         dr3.setRemito(r2);
         dr3.setDocumentacion(doc3);
-        
+
         r2.getDetalleRemito().add(dr3);
         entityManager.persist(r2);
-        
+
         System.out.println("Datos inyectados con éxito.");
     }
 }

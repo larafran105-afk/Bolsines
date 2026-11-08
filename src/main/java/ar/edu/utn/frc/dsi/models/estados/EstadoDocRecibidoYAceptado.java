@@ -8,13 +8,18 @@ import ar.edu.utn.frc.dsi.models.Documentacion;
 import ar.edu.utn.frc.dsi.models.Empleado;
 import jakarta.persistence.Entity;
 
-@Entity 
-public class EstadoDocRecibidoYAceptado extends EstadoDoc{
+@Entity
+public class EstadoDocRecibidoYAceptado extends EstadoDoc {
+
+    public EstadoDocRecibidoYAceptado() {
+        setNombre("Recibido y Aceptado");
+        setDescripcion("...");
+    }
 
     @Override
     public void aceptarDocumentacion(Documentacion documentacion, LocalDateTime fechaActual, Empleado empleadoLogueado,
             List<CambioEstadoDoc> cambioEstado) {
         throw new IllegalStateException("Ya esta recibido");
     }
-    
+
 }
