@@ -25,8 +25,8 @@
   documentación los hace el gestor.
 
   Contrato REST esperado (prefijo /api/recepcion-bolsin):
-    POST /iniciar        {}                       -> { comisionMedica:{nombre}, bolsines:[{id,cmOrigen,nroPrecinto,fechaEnvio,cantRemitos}] }
-    POST /seleccion      { bolsinId }             -> { remitos:[{nroRemito, documentos:[{asunto,tipoDocumento}]}] }
+    POST /iniciar        {}                       -> { comisionMedica:{nombre}, bolsines:[{nroBolsin,cmOrigen,nroPrecinto,fechaEnvio,cantRemitos}] }
+    POST /seleccion      { nroBolsin }             -> { remitos:[{nroRemito, documentos:[{asunto,tipoDocumento}]}] }
     POST /opcion         { opcion }               -> { requiereConfirmacion:true }
     POST /confirmacion   { respuesta:'S'|'N' }    -> { exito:boolean, mensaje:string }
 
@@ -64,11 +64,11 @@ const MOCK = {
     return {
       comisionMedica: { nombre: 'Comisión Médica Córdoba' },
       bolsines: [
-        { id: 1042, cmOrigen: 'Comisión Médica Mendoza', nroPrecinto: 508231, fechaEnvio: '2026-10-23', cantRemitos: 2 },
-        { id: 1047, cmOrigen: 'Comisión Médica Rosario', nroPrecinto: 508377, fechaEnvio: '2026-10-23', cantRemitos: 1 },
-        { id: 1051, cmOrigen: 'Comisión Médica Central (C.A.B.A.)', nroPrecinto: 509012, fechaEnvio: '2026-10-24', cantRemitos: 3 },
-        { id: 1055, cmOrigen: 'Comisión Médica Villa María', nroPrecinto: 509144, fechaEnvio: '2026-10-24', cantRemitos: 1 },
-        { id: 1060, cmOrigen: 'Comisión Médica Paraná', nroPrecinto: 509560, fechaEnvio: '2026-10-26', cantRemitos: 2 }
+        { nroBolsin: 1042, cmOrigen: 'Comisión Médica Mendoza', nroPrecinto: 508231, fechaEnvio: '2026-10-23', cantRemitos: 2 },
+        { nroBolsin: 1047, cmOrigen: 'Comisión Médica Rosario', nroPrecinto: 508377, fechaEnvio: '2026-10-23', cantRemitos: 1 },
+        { nroBolsin: 1051, cmOrigen: 'Comisión Médica Central (C.A.B.A.)', nroPrecinto: 509012, fechaEnvio: '2026-10-24', cantRemitos: 3 },
+        { nroBolsin: 1055, cmOrigen: 'Comisión Médica Villa María', nroPrecinto: 509144, fechaEnvio: '2026-10-24', cantRemitos: 1 },
+        { nroBolsin: 1060, cmOrigen: 'Comisión Médica Paraná', nroPrecinto: 509560, fechaEnvio: '2026-10-26', cantRemitos: 2 }
       ]
     }
   },
@@ -138,7 +138,7 @@ async function opcionRegRecepBolsin() {
   errorMsg.value = ''
   try {
     const data = await call('/iniciar')
-    cmLogueada.value = data.comisionMedica.nombre // mostrarCMEmpLogueado
+    cmLogueada.value = data.comisionMedica // mostrarCMEmpLogueado
     bolsines.value = data.bolsines // solicitarSeleccionBolsin
   } catch (e) {
     errorMsg.value = 'No se pudo conectar con el servidor. Intentá nuevamente.'
@@ -154,7 +154,7 @@ async function tomarSeleccionBolsin(bolsin) {
   remitos.value = []
   cargandoDetalle.value = true
   try {
-    const data = await call('/seleccion', { bolsinId: bolsin.id })
+    const data = await call('/seleccion', { nroBolsin: bolsin.nroBolsin })
     remitos.value = data.remitos // mostrarDatosRemitos
   } catch (e) {
     errorMsg.value = 'No se pudieron obtener los remitos del bolsín.'
@@ -336,7 +336,7 @@ const kpis = [
           </div>
           <h2 class="mt-4 text-xl font-semibold text-[#10233A]">Bolsín recibido</h2>
           <p class="mt-1 text-slate-600 max-w-md mx-auto">
-            El bolsín Nº {{ bolsinElegido?.id }} (precinto {{ bolsinElegido?.nroPrecinto }}) quedó en estado
+            El bolsín Nº {{ bolsinElegido?.nroBolsin }} (precinto {{ bolsinElegido?.nroPrecinto }}) quedó en estado
             <strong>Recibido en CM destino</strong>. Los remitos y la documentación figuran como recibidos y aceptados.
             Se notificó por correo a la comisión médica de origen.
           </p>
@@ -390,10 +390,10 @@ const kpis = [
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                  <tr v-for="b in bolsinesFiltrados" :key="b.id"
+                  <tr v-for="b in bolsinesFiltrados" :key="b.nroBolsin"
                     class="hover:bg-[#F6F9FD] cursor-pointer" tabindex="0"
                     @click="tomarSeleccionBolsin(b)" @keydown.enter="tomarSeleccionBolsin(b)">
-                    <td class="px-4 py-3 font-medium tabular-nums">#{{ b.id }}</td>
+                    <td class="px-4 py-3 font-medium tabular-nums">#{{ b.nroBolsin }}</td>
                     <td class="px-4 py-3">{{ b.cmOrigen }}</td>
                     <td class="px-4 py-3 tabular-nums">{{ b.nroPrecinto }}</td>
                     <td class="px-4 py-3 tabular-nums">{{ fmtFecha(b.fechaEnvio) }}</td>
@@ -419,7 +419,7 @@ const kpis = [
                   <ArrowLeft class="w-5 h-5" />
                 </button>
                 <div>
-                  <h2 class="font-semibold text-[#10233A]">Bolsín #{{ bolsinElegido.id }}</h2>
+                  <h2 class="font-semibold text-[#10233A]">Bolsín #{{ bolsinElegido.nroBolsin }}</h2>
                   <p class="text-sm text-slate-500">
                     Origen: {{ bolsinElegido.cmOrigen }} · Precinto {{ bolsinElegido.nroPrecinto }}
                   </p>
@@ -504,7 +504,7 @@ const kpis = [
           </div>
           <h3 id="titulo-confirmacion" class="mt-4 text-lg font-semibold text-[#10233A]">¿Confirmás la recepción del bolsín?</h3>
           <p class="mt-2 text-sm text-slate-600">
-            Vas a registrar que el contenido del bolsín #{{ bolsinElegido?.id }} es igual al registrado.
+            Vas a registrar que el contenido del bolsín #{{ bolsinElegido?.nroBolsin }} es igual al registrado.
             Los remitos y la documentación pasarán a <strong>Recibida y Aceptada</strong> a tu nombre.
           </p>
         </div>

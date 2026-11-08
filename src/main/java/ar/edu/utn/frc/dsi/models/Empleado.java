@@ -50,9 +50,8 @@ public class Empleado {
 
     public ComisionMedica getCm() {
         return comisionMedica;
-        // DUDA EN CUANTO A QUE DEVOLVERIA EXACTAMENTE, SI EL NOMBRE DE LA COMISION
-        // MEDICA O EL OBJETO COMPLETO(devuelvo el objeto porque sino no puedo seguir
-        // con los otros pasos)
+        // Cambiar en el diagrama de secuencia el get nombre porque se devuelve el
+        // objeto entero, porque si no no se puede hacer lo siguiente
     }
 
     public void setComisionMedica(ComisionMedica comisionMedica) {
