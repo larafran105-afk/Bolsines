@@ -6,6 +6,7 @@ import java.util.List;
 import ar.edu.utn.frc.dsi.models.*;
 import ar.edu.utn.frc.dsi.pantallas.PantallaAdministracionBolsines;
 import ar.edu.utn.frc.dsi.repositories.BolsinRepository;
+import ar.edu.utn.frc.dsi.repositories.SesionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -24,14 +25,14 @@ public class GestorRecepcionBolsin {
     private List<Bolsin> bolsinesEnviados = new ArrayList<>();
     private Bolsin bolsinSeleccionado;
 
-    private Sesion sesionActual;
     private PantallaAdministracionBolsines pantalla;
     
     @Autowired 
     private BolsinRepository bolsinRepository;
+    @Autowired 
+    private SesionRepository sesionRepository;
 
-    public void iniciarRegistro(Sesion sesionActual, PantallaAdministracionBolsines pantalla) {
-        this.sesionActual = sesionActual;
+    public void iniciarRegistro(PantallaAdministracionBolsines pantalla) {
         this.pantalla = pantalla;
 
         this.buscarUser();
@@ -45,7 +46,11 @@ public class GestorRecepcionBolsin {
     }
 
     private void buscarUser() {
-        this.empleadoLogueado = this.sesionActual.buscarEmpleado();
+        Sesion sesionActual = this.sesionRepository
+                .findFirstByFechaHoraFinIsNullOrderByFechaHoraInicioDesc()
+                .orElseThrow(() -> new RuntimeException("No hay sesión activa"));
+
+        this.empleadoLogueado = sesionActual.buscarEmpleado();
     }
 
     private void buscarCMEmp() {
@@ -77,7 +82,9 @@ public class GestorRecepcionBolsin {
     }
 
     public void tomarSeleccionBolsin(Bolsin bolsinElegido) {
-        this.bolsinSeleccionado = bolsinElegido;
+        this.bolsinSeleccionado = this.bolsinRepository
+        .findById(bolsinElegido.getNroBolsin())
+        .orElseThrow();
         // Seteo el cmorigen pero me quedo con duda de porque lo seteo(creo que no lo
         // uso, pero esta como atributo en el diagrama de clases)
         this.CMOrigen = this.bolsinSeleccionado.getCmOrigen();

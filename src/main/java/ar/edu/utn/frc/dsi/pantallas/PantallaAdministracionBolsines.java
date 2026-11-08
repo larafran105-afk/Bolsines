@@ -3,9 +3,6 @@ package ar.edu.utn.frc.dsi.pantallas;
 import ar.edu.utn.frc.dsi.gestores.GestorRecepcionBolsin;
 import ar.edu.utn.frc.dsi.models.Bolsin;
 import ar.edu.utn.frc.dsi.models.ComisionMedica;
-import ar.edu.utn.frc.dsi.models.Sesion;
-import ar.edu.utn.frc.dsi.repositories.BolsinRepository;
-import ar.edu.utn.frc.dsi.repositories.SesionRepository;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,13 +23,8 @@ public class PantallaAdministracionBolsines {
     @Autowired
     private GestorRecepcionBolsin gestor;
 
-    @Autowired
-    private SesionRepository sesionRepository;
-
-    @Autowired
-    private BolsinRepository bolsinRepository;
-
     private Map<String, Object> respuestaParaVue;
+    private List<Bolsin> bolsines = new ArrayList<>();
 
     @PostMapping("/iniciar")
     public Map<String, Object> opcionRegRecepBolsin() {
@@ -40,17 +32,14 @@ public class PantallaAdministracionBolsines {
         this.respuestaParaVue = new HashMap<>();
         this.habilitarVentana();
 
-        Sesion sesionActual = this.sesionRepository
-                .findFirstByFechaHoraFinIsNullOrderByFechaHoraInicioDesc()
-                .orElseThrow(() -> new RuntimeException("No hay sesión activa"));
-
-        this.gestor.iniciarRegistro(sesionActual, this);
+        
+        this.gestor.iniciarRegistro(this);
 
         return this.respuestaParaVue;
     }
 
     public void habilitarVentana() {
-        // 
+        //
     }
 
     public void mostrarCMEmpLogueado(ComisionMedica comisionMedica) {
@@ -73,6 +62,7 @@ public class PantallaAdministracionBolsines {
     public void solicitarSeleccionBolsin(List<Bolsin> bolsinesEnviados) {
 
         List<Map<String, Object>> bolsinesParaVue = new ArrayList<>();
+        this.bolsines = new ArrayList<>(bolsinesEnviados);
 
         for (Bolsin bolsin : bolsinesEnviados) {
             Map<String, Object> mapa = new HashMap<>();
@@ -97,8 +87,17 @@ public class PantallaAdministracionBolsines {
             throw new IllegalArgumentException("El número de bolsín es obligatorio");
         }
 
-        Bolsin bolsinElegido = this.bolsinRepository.findById(nroBolsin)
-                .orElseThrow(() -> new RuntimeException("No se encontró el bolsín con número: " + nroBolsin));
+        Bolsin bolsinElegido = null;
+        for (Bolsin bolsin : this.bolsines) {
+            if (bolsin.getNroBolsin() == nroBolsin) {
+                bolsinElegido = bolsin;
+                break;
+            }
+        }
+
+        if (bolsinElegido == null) {
+            throw new IllegalArgumentException("El bolsín " + nroBolsin + " no está entre los mostrados");
+        }
 
         this.gestor.tomarSeleccionBolsin(bolsinElegido);
         return this.respuestaParaVue;
