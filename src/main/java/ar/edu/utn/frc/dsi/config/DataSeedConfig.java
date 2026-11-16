@@ -1,7 +1,15 @@
 package ar.edu.utn.frc.dsi.config;
 
 import ar.edu.utn.frc.dsi.models.*;
-import ar.edu.utn.frc.dsi.models.estados.*;
+import ar.edu.utn.frc.dsi.models.estados.bolsin.EstadoBolsin;
+import ar.edu.utn.frc.dsi.models.estados.bolsin.BolsinEnviado;
+import ar.edu.utn.frc.dsi.models.estados.bolsin.BolsinRecibidoCMDestino;
+import ar.edu.utn.frc.dsi.models.estados.doc.EstadoDoc;
+import ar.edu.utn.frc.dsi.models.estados.doc.DocEnBolsinEnviado;
+import ar.edu.utn.frc.dsi.models.estados.doc.DocRecibidoYAceptado;
+import ar.edu.utn.frc.dsi.models.estados.remito.EstadoRemito;
+import ar.edu.utn.frc.dsi.models.estados.remito.RemitoEnviado;
+import ar.edu.utn.frc.dsi.models.estados.remito.RemitoRecibidoYAceptado;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -79,34 +87,28 @@ public class DataSeedConfig implements CommandLineRunner {
         entityManager.persist(tdCarta);
 
         // 5. Estados (Asumiendo que las clases hijas de Estado ya son @Entity)
-        EstadoBolsin estadoBolsinEnviado = new EstadoBolsinEnviado();
+        EstadoBolsin estadoBolsinEnviado = new BolsinEnviado();
         estadoBolsinEnviado.setNombre("Enviado");
         estadoBolsinEnviado.setDescripcion("El bolsín enviado a la comision médica de destino");
         entityManager.persist(estadoBolsinEnviado);
 
-        EstadoRemito estadoRemitoEnviado = new EstadoRemitoEnviado();
+        EstadoRemito estadoRemitoEnviado = new RemitoEnviado();
         estadoRemitoEnviado.setNombre("Enviado");
         estadoRemitoEnviado.setDescripcion("Remito enviado dentro de un bolsín");
         entityManager.persist(estadoRemitoEnviado);
 
-        EstadoBolsin estadoBolsinRecibido = new EstadoBolsinRecibidoCMDestino();
-        estadoBolsinRecibido.setNombre("Recibido en CM destino");
-        estadoBolsinRecibido.setDescripcion("...");
+        EstadoBolsin estadoBolsinRecibido = new BolsinRecibidoCMDestino();
         entityManager.persist(estadoBolsinRecibido);
 
-        EstadoRemito estadoRemitoAceptado = new EstadoRemitoRecibidoYAceptado();
-        estadoRemitoAceptado.setNombre("Recibida y Aceptada");
-        estadoRemitoAceptado.setDescripcion("...");
+        EstadoRemito estadoRemitoAceptado = new RemitoRecibidoYAceptado();
         entityManager.persist(estadoRemitoAceptado);
 
-        EstadoDoc estadoDocEnviado = new EstadoDocEnBolsinEnviado();
+        EstadoDoc estadoDocEnviado = new DocEnBolsinEnviado();
         estadoDocEnviado.setNombre("En Bolsin Enviado");
         estadoDocEnviado.setDescripcion("...");
         entityManager.persist(estadoDocEnviado);
 
-        EstadoDoc estadoDocAceptado = new EstadoDocRecibidoYAceptado();
-        estadoDocAceptado.setNombre("Recibido y Aceptado");
-        estadoDocAceptado.setDescripcion("...");
+        EstadoDoc estadoDocAceptado = new DocRecibidoYAceptado();
         entityManager.persist(estadoDocAceptado);
 
         // 6. Bolsín 1042 (De Mendoza a Córdoba)
@@ -171,8 +173,8 @@ public class DataSeedConfig implements CommandLineRunner {
                 estadoDocEnviado,
                 empLogueado,
                 doc3));
-        
-                entityManager.persist(doc3);
+
+        entityManager.persist(doc3);
 
         // 8. Remito 3318 (Tiene Doc 1 y 2)
         Remito r1 = new Remito();

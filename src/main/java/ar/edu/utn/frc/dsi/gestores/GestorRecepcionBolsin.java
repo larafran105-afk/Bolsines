@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
-@Service 
+@Service
 public class GestorRecepcionBolsin {
 
     private LocalDateTime fechaActual;
@@ -26,10 +25,10 @@ public class GestorRecepcionBolsin {
     private Bolsin bolsinSeleccionado;
 
     private PantallaAdministracionBolsines pantalla;
-    
-    @Autowired 
+
+    @Autowired
     private BolsinRepository bolsinRepository;
-    @Autowired 
+    @Autowired
     private SesionRepository sesionRepository;
 
     public void iniciarRegistro(PantallaAdministracionBolsines pantalla) {
@@ -39,7 +38,7 @@ public class GestorRecepcionBolsin {
 
         this.buscarCMEmp();
 
-        this.pantalla.mostrarCMEmpLogueado(this.CMDestino);
+        this.pantalla.mostrarCmEmpLogueado(this.CMDestino);
 
         this.buscarBolsinEnviado();
 
@@ -70,7 +69,8 @@ public class GestorRecepcionBolsin {
 
                 // this.pantalla.mostraCmOrigen(cmOrigenTemporal);
                 // this.pantalla.mostrarNumPrecinto(nroPrecintoTemporal);
-                // ----- Lo quito ahora porque estoy implementando interfaz y solo uso la lista de los bolsine --------- 
+                // ----- Lo quito ahora porque estoy implementando interfaz y solo uso la lista
+                // de los bolsine ---------
 
                 // Aca duda en cuanto a como implementar la muestra de datos (En diagrama lo
                 // muestra fuera del loop pero tendria que hacer una lista )
@@ -83,8 +83,8 @@ public class GestorRecepcionBolsin {
 
     public void tomarSeleccionBolsin(Bolsin bolsinElegido) {
         this.bolsinSeleccionado = this.bolsinRepository
-        .findById(bolsinElegido.getNroBolsin())
-        .orElseThrow();
+                .findById(bolsinElegido.getNroBolsin())
+                .orElseThrow();
         // Seteo el cmorigen pero me quedo con duda de porque lo seteo(creo que no lo
         // uso, pero esta como atributo en el diagrama de clases)
         this.CMOrigen = this.bolsinSeleccionado.getCmOrigen();
@@ -112,7 +112,7 @@ public class GestorRecepcionBolsin {
 
     }
 
-    @Transactional 
+    @Transactional
     public void tomarConfirmacion(String nextLine) {
         switch (nextLine) {
             case "S":
@@ -135,8 +135,8 @@ public class GestorRecepcionBolsin {
 
     private void registrarRecepcionBolsin() {
         this.bolsinSeleccionado = this.bolsinRepository
-        .findById(this.bolsinSeleccionado.getNroBolsin())
-        .orElseThrow();
+                .findById(this.bolsinSeleccionado.getNroBolsin())
+                .orElseThrow();
 
         this.bolsinSeleccionado.registrarRecepcion(this.fechaActual, this.empleadoLogueado);
 

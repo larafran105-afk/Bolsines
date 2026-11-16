@@ -1,17 +1,17 @@
-package ar.edu.utn.frc.dsi.models.estados;
+package ar.edu.utn.frc.dsi.models.estados.bolsin;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import ar.edu.utn.frc.dsi.models.CambioEstadoDoc;
-import ar.edu.utn.frc.dsi.models.Documentacion;
+import ar.edu.utn.frc.dsi.models.Bolsin;
+import ar.edu.utn.frc.dsi.models.CambioEstadoBolsin;
 import ar.edu.utn.frc.dsi.models.Empleado;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "estado_doc")
+@Table(name = "estado_bolsin")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-public abstract class EstadoDoc {
+public abstract class EstadoBolsin {
     @Id
     private String nombre;
 
@@ -33,7 +33,14 @@ public abstract class EstadoDoc {
         this.descripcion = descripcion;
     }
 
-    public abstract void aceptarDocumentacion(Documentacion documentacion, LocalDateTime fechaActual, Empleado empleadoLogueado,
-            List<CambioEstadoDoc> cambioEstado);
+    public boolean esEnviado() {
+        return false;
+    }
+
+    public void registrarRecepcion(Bolsin bolsin, LocalDateTime fechaActual, Empleado empleadoLogueado,
+            List<CambioEstadoBolsin> historialCambiosEstado) {
+        throw new IllegalStateException(
+                "El bolsín en estado " + getNombre() + " no puede aceptarse");
+    }
 
 }

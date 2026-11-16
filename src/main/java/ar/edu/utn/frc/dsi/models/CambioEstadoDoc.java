@@ -3,7 +3,7 @@ package ar.edu.utn.frc.dsi.models;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-import ar.edu.utn.frc.dsi.models.estados.EstadoDoc;
+import ar.edu.utn.frc.dsi.models.estados.doc.EstadoDoc;
 
 @Entity
 @Table(name = "cambio_estado_doc")
@@ -11,7 +11,7 @@ import ar.edu.utn.frc.dsi.models.estados.EstadoDoc;
 public class CambioEstadoDoc {
 
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     private LocalDateTime fechaHoraInicio;
@@ -28,7 +28,6 @@ public class CambioEstadoDoc {
     @ManyToOne
     @JoinColumn(name = "id_empleado")
 
-    
     private Empleado empleado;
 
     public CambioEstadoDoc() {
@@ -41,8 +40,6 @@ public class CambioEstadoDoc {
         this.empleado = empleado;
         this.documentacion = documentacion;
     }
-
-
 
     public int getId() {
         return id;

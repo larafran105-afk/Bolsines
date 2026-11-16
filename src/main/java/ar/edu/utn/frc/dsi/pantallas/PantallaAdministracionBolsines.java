@@ -32,7 +32,6 @@ public class PantallaAdministracionBolsines {
         this.respuestaParaVue = new HashMap<>();
         this.habilitarVentana();
 
-        
         this.gestor.iniciarRegistro(this);
 
         return this.respuestaParaVue;
@@ -42,7 +41,7 @@ public class PantallaAdministracionBolsines {
         //
     }
 
-    public void mostrarCMEmpLogueado(ComisionMedica comisionMedica) {
+    public void mostrarCmEmpLogueado(ComisionMedica comisionMedica) {
 
         this.respuestaParaVue.put("comisionMedica", comisionMedica.getNombre());
 

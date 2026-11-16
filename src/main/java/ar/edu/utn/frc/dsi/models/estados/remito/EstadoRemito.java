@@ -1,4 +1,4 @@
-package ar.edu.utn.frc.dsi.models.estados;
+package ar.edu.utn.frc.dsi.models.estados.remito;
 
 import ar.edu.utn.frc.dsi.models.Remito;
 import jakarta.persistence.Entity;
@@ -33,7 +33,11 @@ public abstract class EstadoRemito {
         this.descripcion = descripcion;
     }
 
-    public abstract void aceptarRemito(Remito remito);
+    // Por defecto la transición no está permitida: solo la sobrescriben
+    // los estados que tienen la flecha de salida en la máquina de estados.
+    public void aceptarRemito(Remito remito) {
+        throw new IllegalStateException("El remito en estado " + getNombre() + " no puede aceptarse");
+    }
         
 
  

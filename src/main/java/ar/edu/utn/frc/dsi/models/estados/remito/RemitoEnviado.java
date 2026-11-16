@@ -1,10 +1,10 @@
-package ar.edu.utn.frc.dsi.models.estados;
+package ar.edu.utn.frc.dsi.models.estados.remito;
 
 import ar.edu.utn.frc.dsi.models.Remito;
 import jakarta.persistence.Entity;
 
-@Entity 
-public class EstadoRemitoEnviado extends EstadoRemito {
+@Entity
+public class RemitoEnviado extends EstadoRemito {
 
     @Override
     public void aceptarRemito(Remito remito) {
@@ -14,7 +14,7 @@ public class EstadoRemitoEnviado extends EstadoRemito {
     }
 
     private EstadoRemito crearEstado() {
-        return new EstadoRemitoRecibidoYAceptado();
+        return new RemitoRecibidoYAceptado();
     }
-    
+
 }

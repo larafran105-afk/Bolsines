@@ -3,17 +3,17 @@ package ar.edu.utn.frc.dsi.models;
 import java.util.ArrayList;
 import java.util.List;
 
-import ar.edu.utn.frc.dsi.models.estados.EstadoRemito;
+import ar.edu.utn.frc.dsi.models.estados.remito.EstadoRemito;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity 
-@Table ( name="remito" )
+@Entity
+@Table(name = "remito")
 
 public class Remito {
 
-    @Id 
+    @Id
     private int nroRemito;
 
     private LocalDate fecha;
@@ -29,7 +29,7 @@ public class Remito {
     @OneToMany(mappedBy = "remito", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleRemito> detalleRemito;
 
-    public int getNroRemito() {
+    public int getNumero() {
         return nroRemito;
     }
 
@@ -82,11 +82,10 @@ public class Remito {
 
     public void aceptarRemito(LocalDateTime fechaActual, Empleado empleadoLogueado) {
         this.estado.aceptarRemito(this);
-    // en diagrama cambiar mientras haya documentacion por mientras hayan detalles 
+        // en diagrama cambiar mientras haya documentacion por mientras hayan detalles
         for (DetalleRemito detalle : this.detalleRemito) {
             detalle.aceptarDocumentacion(fechaActual, empleadoLogueado);
         }
     }
-
 
 }
