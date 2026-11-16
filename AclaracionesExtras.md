@@ -3,3 +3,6 @@ cuestiones: en el paso del primer bucle, cuando se obtiene el cm origen, la func
 
 
 para el paso de mostrar los bolsines que correspondan a enviados, use variables temporales y las mostre dentro del bucle. nose si se debia incorporar listas para guardar los nro precinto y mostrarlos después en otr obucle.
+
+
+Queda en duda si setear fecha de los remitos en cada cambio de estado, o queda la fecha desde que se crearon

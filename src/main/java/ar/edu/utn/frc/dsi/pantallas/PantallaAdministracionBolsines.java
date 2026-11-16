@@ -1,99 +1,194 @@
 package ar.edu.utn.frc.dsi.pantallas;
 
+import ar.edu.utn.frc.dsi.gestores.GestorRecepcionBolsin;
 import ar.edu.utn.frc.dsi.models.Bolsin;
 import ar.edu.utn.frc.dsi.models.ComisionMedica;
-import ar.edu.utn.frc.dsi.models.Sesion;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Scanner;
+import java.util.Map;
 
-import ar.edu.utn.frc.dsi.gestores.GestorRecepcionBolsin;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/recepcion-bolsin")
 
 public class PantallaAdministracionBolsines {
+    @Autowired
     private GestorRecepcionBolsin gestor;
-    private Scanner scanner;
 
-    private List<Bolsin> bolsinesParaMostrar;
+    private Map<String, Object> respuestaParaVue;
+    private List<Bolsin> bolsines = new ArrayList<>();
 
-    public PantallaAdministracionBolsines() {
-        this.gestor = new GestorRecepcionBolsin();
-        this.scanner = new Scanner(System.in);
-    }
+    @PostMapping("/iniciar")
+    public Map<String, Object> opcionRegRecepBolsin() {
 
-    public void opcionRegRecepBolsin(Sesion sesionActual) {
+        this.respuestaParaVue = new HashMap<>();
         this.habilitarVentana();
-        this.gestor.iniciarRegistro(sesionActual, this);
+
+        this.gestor.iniciarRegistro(this);
+
+        return this.respuestaParaVue;
     }
 
     public void habilitarVentana() {
-        System.out.println("Ventana");
-        // Interefaz a implementar
+        //
     }
 
-    public void mostrarCMEmpLogueado(ComisionMedica comisionMedica) {
-        System.out.println("Comisión Médica del empleado logueado: " + comisionMedica.getNombre());
-        System.out.println("Buscando bolsines enviados a esta CM...\n");
+    public void mostrarCmEmpLogueado(ComisionMedica comisionMedica) {
+
+        this.respuestaParaVue.put("comisionMedica", comisionMedica.getNombre());
+
     }
 
-    public void mostraCmOrigen(String cmOrigenTemporal) {
-        System.out.println("Comisión Médica de origen del bolsín: " + cmOrigenTemporal);
-    }
+    // ----- Lo quito ahora porque estoy implementando interfaz y solo uso la lista
+    // de los bolsine ---------
+    // public void mostraCmOrigen(String cmOrigenTemporal) {
+    // System.out.println("Comisión Médica de origen del bolsín: " +
+    // cmOrigenTemporal);
+    // }
 
-    public void mostrarNumPrecinto(int nroPrecintoTemporal) {
-        System.out.println("Número de precinto del bolsín: " + nroPrecintoTemporal);
-    }
+    // public void mostrarNumPrecinto(int nroPrecintoTemporal) {
+    // System.out.println("Número de precinto del bolsín: " + nroPrecintoTemporal);
+    // }
 
     public void solicitarSeleccionBolsin(List<Bolsin> bolsinesEnviados) {
 
+        List<Map<String, Object>> bolsinesParaVue = new ArrayList<>();
+        this.bolsines = new ArrayList<>(bolsinesEnviados);
 
-        // TODO Auto-generated method stub
-        // Hay que implementar la logica/interfaz para que el usuario selecciones el
-        // bolsin (me quedo la duda de si es necesario que le pase la lista a la
-        // funcion)
-        Bolsin bolsinElegido = new Bolsin(); // Simulamos que el usuario eligio un bolsin de la lista
-        this.tomarSeleccionBolsin(bolsinElegido);
-        
+        for (Bolsin bolsin : bolsinesEnviados) {
+            Map<String, Object> mapa = new HashMap<>();
+            mapa.put("nroBolsin", bolsin.getNroBolsin());
+            mapa.put("cmOrigen", bolsin.getCmOrigen());
+            mapa.put("nroPrecinto", bolsin.getNroPrecinto());
+            mapa.put("fechaEnvio", bolsin.getFecha() != null ? bolsin.getFecha().toString() : null);
+            mapa.put("cantRemitos", bolsin.getRemito() != null ? bolsin.getRemito().size() : 0);
+            bolsinesParaVue.add(mapa);
+
+        }
+
+        this.respuestaParaVue.put("bolsines", bolsinesParaVue);
     }
 
-    public void tomarSeleccionBolsin(Bolsin bolsinElegido) {
+    @PostMapping("/seleccion")
+    public Map<String, Object> tomarSeleccionBolsin(@RequestBody Map<String, Integer> payload) {
+        this.respuestaParaVue = new HashMap<>();
+
+        Integer nroBolsin = payload.get("nroBolsin");
+        if (nroBolsin == null) {
+            throw new IllegalArgumentException("El número de bolsín es obligatorio");
+        }
+
+        Bolsin bolsinElegido = null;
+        for (Bolsin bolsin : this.bolsines) {
+            if (bolsin.getNroBolsin() == nroBolsin) {
+                bolsinElegido = bolsin;
+                break;
+            }
+        }
+
+        if (bolsinElegido == null) {
+            throw new IllegalArgumentException("El bolsín " + nroBolsin + " no está entre los mostrados");
+        }
+
         this.gestor.tomarSeleccionBolsin(bolsinElegido);
+        return this.respuestaParaVue;
     }
 
     public void mostrarDatosRemitos(List<String> datosRemitos) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'mostrarDatosRemitos'");
+        Map<String, List<Map<String, Object>>> documentosPorRemito = new LinkedHashMap<>();
 
-        // a implementar porque paja
+        for (String dato : datosRemitos) {
+            int primeraComa = dato.indexOf(',');
+            int ultimaComa = dato.lastIndexOf(',');
+            if (primeraComa < 0 || primeraComa == ultimaComa) {
+                continue;
+            }
+
+            String nroRemito = dato.substring(0, primeraComa).trim();
+
+            Map<String, Object> documento = new HashMap<>();
+            documento.put("asunto", dato.substring(primeraComa + 1, ultimaComa).trim());
+            documento.put("tipoDocumento", dato.substring(ultimaComa + 1).trim());
+
+            documentosPorRemito.computeIfAbsent(nroRemito, k -> new ArrayList<>()).add(documento);
+        }
+
+        List<Map<String, Object>> remitosParaVue = new ArrayList<>();
+        for (Map.Entry<String, List<Map<String, Object>>> entrada : documentosPorRemito.entrySet()) {
+            Map<String, Object> remito = new HashMap<>();
+            remito.put("nroRemito", entrada.getKey());
+            remito.put("documentos", entrada.getValue());
+            remitosParaVue.add(remito);
+        }
+
+        this.respuestaParaVue.put("remitos", remitosParaVue);
+
     }
 
     public void solicitarOpcionRecepcion() {
-        
-        System.out.println("Seleccione una opción de recepción:\r\n1. El contenido del bolsín es igual al registrado\r\n" + //
-                        "2. No se recibe toda la documentación asociada a los remitos que contiene el bolsín\r\n" + //
-                        "3. Existe documentación que no corresponde al destino\r\n" + //
-                        "4. La documentación se debe redirigir a otra área. ");
-        int opcion = this.scanner.nextInt();
-        this.tomarSelecRecepcion(opcion);
-        
+
+        // LO HACE EL FRONT
+        // System.out.println(
+        // "Seleccione una opción de recepción:\r\n1. El contenido del bolsín es igual
+        // al registrado\r\n" + //
+        // "2. No se recibe toda la documentación asociada a los remitos que contiene el
+        // bolsín\r\n" + //
+        // "3. Existe documentación que no corresponde al destino\r\n" + //
+        // "4. La documentación se debe redirigir a otra área. ");
+        // int opcion = this.scanner.nextInt();
+        // this.tomarSelecRecepcion(opcion);
+
     }
 
-    public void tomarSelecRecepcion(int opcion) {
+    @PostMapping("/opcion")
+    public Map<String, Object> tomarSelecRecepcion(@RequestBody Map<String, Integer> payload) {
+        this.respuestaParaVue = new HashMap<>();
+
+        Integer opcion = payload.get("opcion");
+
+        if (opcion == null) {
+            throw new IllegalArgumentException("La opción de recepción es obligatoria");
+        }
+
         this.gestor.tomarSelecRecepcion(opcion);
+
+        return this.respuestaParaVue;
     }
 
     public void solicitarConfirmacion() {
-        System.out.println("¿Desea confirmar la recepción del bolsín? (S/N)");
-        this.tomarConfirmacion(this.scanner.nextLine().toUpperCase());
+        // System.out.println("¿Desea confirmar la recepción del bolsín? (S/N)");
+        // this.tomarConfirmacion(this.scanner.nextLine().toUpperCase());
+
+        this.respuestaParaVue.put("requiereConfirmacion", true);
+
     }
 
-    private void tomarConfirmacion(String nextLine) {
-        this.gestor.tomarConfirmacion(nextLine);
+    @PostMapping("/confirmacion")
+    public Map<String, Object> tomarConfirmacion(@RequestBody Map<String, String> payload) {
+        this.respuestaParaVue = new HashMap<>();
+
+        String respuesta = payload.get("respuesta");
+
+        if (respuesta == null) {
+            throw new IllegalArgumentException("Falta la respuesta de confirmación.");
+        }
+
+        this.gestor.tomarConfirmacion(respuesta.toUpperCase());
+
+        return this.respuestaParaVue;
     }
 
     public void mostrarMensajeExito() {
-        System.out.println("LISTO EXITOSO");
+        this.respuestaParaVue.put("exito", true);
+        this.respuestaParaVue.put("mensaje", "Recepción registrada correctamente.");
     }
-
-    
 
 }

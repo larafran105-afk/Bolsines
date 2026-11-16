@@ -3,7 +3,7 @@ package ar.edu.utn.frc.dsi.models;
 import java.util.ArrayList;
 import java.util.List;
 
-import ar.edu.utn.frc.dsi.models.estados.EstadoBolsin;
+import ar.edu.utn.frc.dsi.models.estados.bolsin.EstadoBolsin;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +33,10 @@ public class Bolsin {
 
     @OneToMany(mappedBy = "bolsin", cascade = CascadeType.ALL)
     private List<CambioEstadoBolsin> cambioEstadoBolsin;
+
+    @ManyToOne
+    @JoinColumn(name = "estadoActual")
+    private EstadoBolsin estadoActual;
 
     public int getNroBolsin() {
         return nroBolsin;
@@ -98,6 +102,10 @@ public class Bolsin {
         this.cambioEstadoBolsin = cambioEstadoBolsin;
     }
 
+    public void setEstado(EstadoBolsin estadoActual) {
+        this.estadoActual = estadoActual;
+    }
+
     public boolean buscarBolsinEnviado(ComisionMedica cmGestor) {
         if (!this.esTuCmDestino(cmGestor)) {
             return false;
@@ -111,6 +119,11 @@ public class Bolsin {
 
             }
         }
+
+        // if (estadoActual.esEnviado())
+        // return true; ESTO ES CON EL PATRON CREO, DUDA EN SI PONERLO O NO PORQUE
+        // CAMBIA EL DIAGRAMA ORIGINAL
+
         return false;
     }
 
@@ -125,10 +138,10 @@ public class Bolsin {
     public List<String> obtenerInformacionRemitos() {
         List<String> datosFormateados = new ArrayList<>();
 
-        for (Remito remito : this.remito) {
-            String nroRemito = String.valueOf(remito.getNroRemito());
+        for (Remito r : this.remito) {
+            String nroRemito = String.valueOf(r.getNumero());
 
-            List<String> detallesProcesados = remito.buscarDocumentacion();
+            List<String> detallesProcesados = r.buscarDocumentacion();
 
             for (String detalle : detallesProcesados) {
                 datosFormateados.add(nroRemito + "," + detalle);
@@ -139,25 +152,16 @@ public class Bolsin {
     }
 
     public void registrarRecepcion(LocalDateTime fechaActual, Empleado empleadoLogueado) {
-        for (CambioEstadoBolsin ceb : this.cambioEstadoBolsin) {
 
-            if (ceb.sosActual()) {
-                EstadoBolsin estadoActual = ceb.getEstado();
-                estadoActual.registrarRecepcion(this, fechaActual, empleadoLogueado, this.cambioEstadoBolsin);
-                break;
-            }
-        }
+        estadoActual.registrarRecepcion(this, fechaActual, empleadoLogueado, this.cambioEstadoBolsin);
 
         for (Remito r : this.remito) {
             r.aceptarRemito(fechaActual, empleadoLogueado);
-            
         }
     }
 
     public void agregarCambioEstado(CambioEstadoBolsin nuevoCambioEstado) {
         this.cambioEstadoBolsin.add(nuevoCambioEstado);
-
-        // No implemento el setEstado del diagrama, lo veo redundante y no tenemos un
-        // estado que setear aca
     }
+
 }

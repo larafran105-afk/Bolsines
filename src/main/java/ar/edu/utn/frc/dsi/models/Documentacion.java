@@ -2,32 +2,36 @@ package ar.edu.utn.frc.dsi.models;
 
 import java.util.List;
 
-import ar.edu.utn.frc.dsi.models.estados.EstadoDoc;
+import ar.edu.utn.frc.dsi.models.estados.doc.EstadoDoc;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity 
-@Table (name = "documentacion")
+@Entity
+@Table(name = "documentacion")
 
 public class Documentacion {
-    @Id 
+    @Id
     private int nroDoc;
 
     private String asunto;
     private LocalDate fechaPase;
     private String descr;
 
-    @ManyToOne 
-    @JoinColumn (name = "tipoDoc")
+    @ManyToOne
+    @JoinColumn(name = "tipoDoc")
     private TipoDoc tipoDoc;
 
     @ManyToOne
-    @JoinColumn (name = "cm_origen")
+    @JoinColumn(name = "cm_origen")
     private ComisionMedica comisionMedicaOrigen;
 
-    @OneToMany (mappedBy = "documentacion", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "documentacion", cascade = CascadeType.ALL)
     private List<CambioEstadoDoc> cambioEstado;
+
+    @ManyToOne
+    @JoinColumn(name = "estadoActual")
+    private EstadoDoc estadoActual;
 
     public int getNroDoc() {
         return nroDoc;
@@ -85,20 +89,20 @@ public class Documentacion {
         this.cambioEstado = cambioEstado;
     }
 
+    public EstadoDoc getEstadoActual() {
+        return estadoActual;
+    }
+
+    public void setEstado(EstadoDoc estadoActual) {
+        this.estadoActual = estadoActual;
+    }
+
     public void aceptarDocumentacion(LocalDateTime fechaActual, Empleado empleadoLogueado) {
-        for (CambioEstadoDoc ced : cambioEstado) {
-            if(ced.sosActual()) {
-                EstadoDoc estadoActual = ced.getEstado();
-                estadoActual.aceptarDocumentacion(this, fechaActual, empleadoLogueado, this.cambioEstado);
-                break;
-            }
-        }
+        estadoActual.aceptarDocumentacion(this, fechaActual, empleadoLogueado, this.cambioEstado);
     }
 
     public void agregarCambioEstado(CambioEstadoDoc nuevoCambioEstado) {
         this.cambioEstado.add(nuevoCambioEstado);
-        // Como antes, tampoco implemento el setestado, porque no tenemos un estado como variable que setear.
     }
-    
-    
+
 }

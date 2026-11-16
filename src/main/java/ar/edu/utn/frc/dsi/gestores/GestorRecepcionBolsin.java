@@ -5,36 +5,51 @@ import java.util.List;
 
 import ar.edu.utn.frc.dsi.models.*;
 import ar.edu.utn.frc.dsi.pantallas.PantallaAdministracionBolsines;
+import ar.edu.utn.frc.dsi.repositories.BolsinRepository;
+import ar.edu.utn.frc.dsi.repositories.SesionRepository;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
 public class GestorRecepcionBolsin {
 
     private LocalDateTime fechaActual;
     private Empleado empleadoLogueado;
     private ComisionMedica CMDestino;
     private String CMOrigen;
-    private List<Bolsin> bolsinesEnviados;
+    private List<Bolsin> bolsinesEnviados = new ArrayList<>();
     private Bolsin bolsinSeleccionado;
 
-    private Sesion sesionActual;
     private PantallaAdministracionBolsines pantalla;
 
-    public void iniciarRegistro(Sesion sesionActual, PantallaAdministracionBolsines pantalla) {
-        this.sesionActual = sesionActual;
+    @Autowired
+    private BolsinRepository bolsinRepository;
+    @Autowired
+    private SesionRepository sesionRepository;
+
+    public void iniciarRegistro(PantallaAdministracionBolsines pantalla) {
         this.pantalla = pantalla;
 
         this.buscarUser();
 
         this.buscarCMEmp();
 
-        this.pantalla.mostrarCMEmpLogueado(this.CMDestino);
+        this.pantalla.mostrarCmEmpLogueado(this.CMDestino);
 
         this.buscarBolsinEnviado();
 
     }
 
     private void buscarUser() {
-        this.empleadoLogueado = this.sesionActual.buscarEmpleado();
+        Sesion sesionActual = this.sesionRepository
+                .findFirstByFechaHoraFinIsNullOrderByFechaHoraInicioDesc()
+                .orElseThrow(() -> new RuntimeException("No hay sesión activa"));
+
+        this.empleadoLogueado = sesionActual.buscarEmpleado();
     }
 
     private void buscarCMEmp() {
@@ -42,17 +57,20 @@ public class GestorRecepcionBolsin {
     }
 
     private void buscarBolsinEnviado() {
-        List<Bolsin> todosLosBolsines = new ArrayList<>(); // SIMULAMOS QUE TRAEMOS DE LA DB TODOS LOS BOLSINES
+        this.bolsinesEnviados.clear();
+        List<Bolsin> todosLosBolsines = this.bolsinRepository.findAll();
 
         for (Bolsin bolsin : todosLosBolsines) {
             if (bolsin.buscarBolsinEnviado(this.CMDestino)) {
                 this.bolsinesEnviados.add(bolsin);
 
-                String cmOrigenTemporal = bolsin.getCmOrigen();
-                int nroPrecintoTemporal = bolsin.getNroPrecinto();
+                // String cmOrigenTemporal = bolsin.getCmOrigen();
+                // int nroPrecintoTemporal = bolsin.getNroPrecinto();
 
-                this.pantalla.mostraCmOrigen(cmOrigenTemporal);
-                this.pantalla.mostrarNumPrecinto(nroPrecintoTemporal);
+                // this.pantalla.mostraCmOrigen(cmOrigenTemporal);
+                // this.pantalla.mostrarNumPrecinto(nroPrecintoTemporal);
+                // ----- Lo quito ahora porque estoy implementando interfaz y solo uso la lista
+                // de los bolsine ---------
 
                 // Aca duda en cuanto a como implementar la muestra de datos (En diagrama lo
                 // muestra fuera del loop pero tendria que hacer una lista )
@@ -64,7 +82,9 @@ public class GestorRecepcionBolsin {
     }
 
     public void tomarSeleccionBolsin(Bolsin bolsinElegido) {
-        this.bolsinSeleccionado = bolsinElegido;
+        this.bolsinSeleccionado = this.bolsinRepository
+                .findById(bolsinElegido.getNroBolsin())
+                .orElseThrow();
         // Seteo el cmorigen pero me quedo con duda de porque lo seteo(creo que no lo
         // uso, pero esta como atributo en el diagrama de clases)
         this.CMOrigen = this.bolsinSeleccionado.getCmOrigen();
@@ -92,6 +112,7 @@ public class GestorRecepcionBolsin {
 
     }
 
+    @Transactional
     public void tomarConfirmacion(String nextLine) {
         switch (nextLine) {
             case "S":
@@ -113,7 +134,13 @@ public class GestorRecepcionBolsin {
     }
 
     private void registrarRecepcionBolsin() {
+        this.bolsinSeleccionado = this.bolsinRepository
+                .findById(this.bolsinSeleccionado.getNroBolsin())
+                .orElseThrow();
+
         this.bolsinSeleccionado.registrarRecepcion(this.fechaActual, this.empleadoLogueado);
+
+        this.bolsinRepository.save(this.bolsinSeleccionado);
 
     }
 

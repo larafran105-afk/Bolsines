@@ -3,31 +3,34 @@ package ar.edu.utn.frc.dsi.models;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-import ar.edu.utn.frc.dsi.models.estados.EstadoBolsin;
+import ar.edu.utn.frc.dsi.models.estados.bolsin.EstadoBolsin;
 
-@Entity 
-@Table (name = "cambio_estado_bolsin")
+@Entity
+@Table(name = "cambio_estado_bolsin")
 
 public class CambioEstadoBolsin {
 
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    
+
     private LocalDateTime fechaHoraInicio;
     private LocalDateTime fechaHoraFin;
 
     @ManyToOne
-    @JoinColumn (name = "estado")
+    @JoinColumn(name = "estado")
     private EstadoBolsin estado;
 
     @ManyToOne
-    @JoinColumn (name = "nro_bolsin")
+    @JoinColumn(name = "nro_bolsin")
     private Bolsin bolsin;
-    
+
     @ManyToOne
     @JoinColumn(name = "id_empleado")
     private Empleado empleado;
+
+    public CambioEstadoBolsin() {
+    }
 
     public CambioEstadoBolsin(LocalDateTime fechaHoraInicio, EstadoBolsin estado, Empleado empleado, Bolsin bolsin) {
         this.fechaHoraInicio = fechaHoraInicio;
@@ -91,6 +94,5 @@ public class CambioEstadoBolsin {
     public boolean sosEnviado() {
         return this.estado.esEnviado();
     }
-    
-    
+
 }
