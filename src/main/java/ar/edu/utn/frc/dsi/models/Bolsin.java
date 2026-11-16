@@ -34,7 +34,7 @@ public class Bolsin {
     @OneToMany(mappedBy = "bolsin", cascade = CascadeType.ALL)
     private List<CambioEstadoBolsin> cambioEstadoBolsin;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "estadoActual")
     private EstadoBolsin estadoActual;
 
@@ -119,6 +119,11 @@ public class Bolsin {
 
             }
         }
+
+        // if (estadoActual.esEnviado())
+        // return true; ESTO ES CON EL PATRON CREO, DUDA EN SI PONERLO O NO PORQUE
+        // CAMBIA EL DIAGRAMA ORIGINAL
+
         return false;
     }
 
@@ -157,9 +162,6 @@ public class Bolsin {
 
     public void agregarCambioEstado(CambioEstadoBolsin nuevoCambioEstado) {
         this.cambioEstadoBolsin.add(nuevoCambioEstado);
-
-        // No implemento el setEstado del diagrama, lo veo redundante y no tenemos un
-        // estado que setear aca
     }
 
 }

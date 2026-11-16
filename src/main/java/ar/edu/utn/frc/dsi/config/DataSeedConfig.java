@@ -130,6 +130,7 @@ public class DataSeedConfig implements CommandLineRunner {
         // Como CEB tiene el boolean sosActual() basado en fechaHoraFin == null, no
         // seteamos fecha fin.
         bolsin.getCambioEstadoBolsin().add(ceb);
+        bolsin.setEstado(estadoBolsinEnviado);
 
         entityManager.persist(bolsin);
 
@@ -156,6 +157,7 @@ public class DataSeedConfig implements CommandLineRunner {
                 empLogueado,
                 doc1));
 
+        doc1.setEstado(estadoDocEnviado);
         entityManager.persist(doc1);
 
         doc2.setCambioEstado(new ArrayList<>());
@@ -165,6 +167,7 @@ public class DataSeedConfig implements CommandLineRunner {
                 empLogueado,
                 doc2));
 
+        doc2.setEstado(estadoDocEnviado);
         entityManager.persist(doc2);
 
         doc3.setCambioEstado(new ArrayList<>());
@@ -174,6 +177,7 @@ public class DataSeedConfig implements CommandLineRunner {
                 empLogueado,
                 doc3));
 
+        doc3.setEstado(estadoDocEnviado);
         entityManager.persist(doc3);
 
         // 8. Remito 3318 (Tiene Doc 1 y 2)

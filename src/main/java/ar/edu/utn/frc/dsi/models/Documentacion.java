@@ -29,7 +29,7 @@ public class Documentacion {
     @OneToMany(mappedBy = "documentacion", cascade = CascadeType.ALL)
     private List<CambioEstadoDoc> cambioEstado;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "estadoActual")
     private EstadoDoc estadoActual;
 
@@ -103,8 +103,6 @@ public class Documentacion {
 
     public void agregarCambioEstado(CambioEstadoDoc nuevoCambioEstado) {
         this.cambioEstado.add(nuevoCambioEstado);
-        // Como antes, tampoco implemento el setestado, porque no tenemos un estado como
-        // variable que setear.
     }
 
 }
