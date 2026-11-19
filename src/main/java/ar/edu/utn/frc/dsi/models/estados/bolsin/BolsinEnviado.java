@@ -11,6 +11,11 @@ import jakarta.persistence.Entity;
 @Entity
 public class BolsinEnviado extends EstadoBolsin {
 
+    public BolsinEnviado() {
+        setNombre("Enviado");
+        setDescripcion("El bolsín enviado a la comision médica de destino");
+    }
+
     @Override
     public boolean esEnviado() {
         return true;

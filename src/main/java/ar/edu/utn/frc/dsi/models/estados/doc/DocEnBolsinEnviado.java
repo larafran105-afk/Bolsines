@@ -15,6 +15,11 @@ import jakarta.persistence.Entity;
 @Entity
 public class DocEnBolsinEnviado extends EstadoDoc {
 
+    public DocEnBolsinEnviado() {
+        setNombre("En Bolsin Enviado");
+        setDescripcion("...");
+    }
+
     // Flujo básico: En bolsín enviado -> Recibida y Aceptada
     @Override
     public void aceptarDocumentacion(Documentacion documentacion, LocalDateTime fechaActual, Empleado empleadoLogueado,

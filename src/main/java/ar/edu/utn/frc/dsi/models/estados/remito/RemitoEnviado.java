@@ -6,6 +6,11 @@ import jakarta.persistence.Entity;
 @Entity
 public class RemitoEnviado extends EstadoRemito {
 
+    public RemitoEnviado() {
+        setNombre("Enviado");
+        setDescripcion("Remito enviado dentro de un bolsín");
+    }
+
     // Flujo básico: Enviado -> Recibido y Aceptado
     @Override
     public void aceptarRemito(Remito remito) {

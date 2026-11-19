@@ -39,29 +39,14 @@ public class DataSeedConfig implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // 1. Estados: se verifican siempre, así una base ya cargada recibe los
         // estados nuevos (No Recibida, Recibida y Rechazada, Aceptado Parcial).
-        EstadoBolsin estadoBolsinEnviado = asegurarEstado(EstadoBolsin.class, "Enviado", () -> {
-            EstadoBolsin e = new BolsinEnviado();
-            e.setNombre("Enviado");
-            e.setDescripcion("El bolsín enviado a la comision médica de destino");
-            return e;
-        });
+        EstadoBolsin estadoBolsinEnviado = asegurarEstado(EstadoBolsin.class, "Enviado", () -> new BolsinEnviado());
         asegurarEstado(EstadoBolsin.class, "Recibido en CM destino", BolsinRecibidoCMDestino::new);
 
-        EstadoRemito estadoRemitoEnviado = asegurarEstado(EstadoRemito.class, "Enviado", () -> {
-            EstadoRemito e = new RemitoEnviado();
-            e.setNombre("Enviado");
-            e.setDescripcion("Remito enviado dentro de un bolsín");
-            return e;
-        });
+        EstadoRemito estadoRemitoEnviado = asegurarEstado(EstadoRemito.class, "Enviado", () -> new RemitoEnviado());
         asegurarEstado(EstadoRemito.class, "Recibido y Aceptado", RemitoRecibidoYAceptado::new);
         asegurarEstado(EstadoRemito.class, "Recibido y Aceptado Parcial", RemitoRecibidoYAceptadoParcialmente::new);
 
-        EstadoDoc estadoDocEnviado = asegurarEstado(EstadoDoc.class, "En Bolsin Enviado", () -> {
-            EstadoDoc e = new DocEnBolsinEnviado();
-            e.setNombre("En Bolsin Enviado");
-            e.setDescripcion("...");
-            return e;
-        });
+        EstadoDoc estadoDocEnviado = asegurarEstado(EstadoDoc.class, "En Bolsin Enviado", () -> new DocEnBolsinEnviado());
         asegurarEstado(EstadoDoc.class, "Recibida y Aceptada", DocRecibidoYAceptado::new);
         asegurarEstado(EstadoDoc.class, "No Recibida", DocNoRecibida::new);
         asegurarEstado(EstadoDoc.class, "Recibida y Rechazada", DocRecibidaYRechazada::new);
