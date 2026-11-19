@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.dsi.models;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.*;
 
@@ -43,14 +44,28 @@ public class DetalleRemito {
         this.documentacion = documentacion;
     }
 
+    // Formato "nroDoc|asunto|tipoDoc". Se usa "|" porque el asunto puede tener comas.
     public String obtenerDocumentacion() {
+        int nroDoc = this.documentacion.getNroDoc();
         String asunto = this.documentacion.getAsunto();
         String tipoDoc = this.documentacion.getTipoDoc();
-        return asunto + "," + tipoDoc;
+        return nroDoc + "|" + asunto + "|" + tipoDoc;
+    }
+
+    public boolean contieneDocumentacion(List<Integer> nrosDoc) {
+        return nrosDoc.contains(this.documentacion.getNroDoc());
     }
 
     public void aceptarDocumentacion(LocalDateTime fechaActual, Empleado empleadoLogueado) {
         this.documentacion.aceptarDocumentacion(fechaActual, empleadoLogueado);
     }
-    
+
+    public void marcarNoRecibida(LocalDateTime fechaActual, Empleado empleadoLogueado) {
+        this.documentacion.marcarNoRecibida(fechaActual, empleadoLogueado);
+    }
+
+    public void rechazarDocumentacion(LocalDateTime fechaActual, Empleado empleadoLogueado) {
+        this.documentacion.rechazarDocumentacion(fechaActual, empleadoLogueado);
+    }
+
 }

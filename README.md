@@ -80,10 +80,21 @@ npm run dev
 
 1. Iniciar el registro de recepción: se muestra la CM del empleado logueado y los bolsines enviados.
 2. Seleccionar un bolsín: se muestran sus remitos y documentación.
-3. Elegir la opción 1: "El contenido del bolsín es igual al registrado".
-4. Confirmar.
+3. Elegir una opción de recepción y confirmar.
 
-Resultado esperado: el bolsín pasa a "Recibido en CM destino", los remitos a "Recibido y Aceptado" y la documentación a "Recibida y Aceptada". El bolsín deja de aparecer entre los enviados.
+El seed carga tres bolsines enviados a Córdoba, uno para cada flujo:
+
+| Bolsín | Flujo sugerido | Qué hacer | Resultado esperado |
+| ------ | -------------- | --------- | ------------------ |
+| 1042 | Básico (opción 1) | Elegir "El contenido del bolsín es igual al registrado" | Bolsín en "Recibido en CM destino", remitos en "Recibido y Aceptado", documentación en "Recibida y Aceptada" |
+| 1047 | A3 (opción 2) | Elegir "No se recibe toda la documentación", marcar uno o más documentos | Lo marcado pasa a "No Recibida", el resto a "Recibida y Aceptada"; los remitos con faltantes quedan en "Recibido y Aceptado Parcial" |
+| 1051 | A4 (opción 3) | Elegir "Existe documentación que no corresponde al destino", marcar uno o más documentos | Lo marcado pasa a "Recibida y Rechazada", el resto a "Recibida y Aceptada"; los remitos afectados quedan en "Recibido y Aceptado Parcial" |
+
+En cualquier caso, si en el modal se elige "No, volver" (A6) no se registra nada y se vuelve a la elección de opción. Los filtros por precinto y CM de origen cubren A1/A2. La opción 4 (redirigir a otra área, A5) no está implementada.
+
+Todos los cambios de estado de documentación los resuelve el patrón State: `DocEnBolsinEnviado` implementa `aceptarDocumentacion`, `marcarNoRecibida` y `rechazarDocumentacion`; los demás estados heredan de `EstadoDoc` la versión que rechaza la transición.
+
+> Si la base ya tenía datos de una versión anterior, al arrancar se agregan los estados nuevos, pero los bolsines 1047 y 1051 solo se crean con la base vacía (ver "Volver a empezar con datos limpios").
 
 ### Verificar en la base
 
@@ -111,8 +122,9 @@ Prefijo `/api/recepcion-bolsin`, todos `POST`:
 | --------------- | --------------------- | ------------------------------------------------------ |
 | `/iniciar`      | –                     | Busca la CM del empleado y lista los bolsines enviados |
 | `/seleccion`    | `{"nroBolsin": 1042}` | Devuelve remitos y documentación del bolsín            |
-| `/opcion`       | `{"opcion": 1}`       | Registra la opción de recepción y pide confirmación    |
-| `/confirmacion` | `{"respuesta": "S"}`  | Registra la recepción                                  |
+| `/opcion`       | `{"opcion": 1}`       | Registra la opción de recepción; con 1 pide confirmación, con 2 o 3 pide marcar documentación |
+| `/documentacion`| `{"nrosDoc": [5]}`    | (A3/A4) Registra la documentación faltante o rechazada y pide confirmación |
+| `/confirmacion` | `{"respuesta": "S"}`  | `"S"` registra la recepción; `"N"` (A6) vuelve a pedir la opción |
 
 ## Problemas frecuentes
 

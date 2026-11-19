@@ -88,4 +88,52 @@ public class Remito {
         }
     }
 
+    // A3: la documentación indicada no llegó; el resto se acepta.
+    public void registrarFaltantes(LocalDateTime fechaActual, Empleado empleadoLogueado,
+            List<Integer> nrosDocFaltantes) {
+        this.actualizarEstadoSegun(nrosDocFaltantes);
+
+        for (DetalleRemito detalle : this.detalleRemito) {
+            if (detalle.contieneDocumentacion(nrosDocFaltantes)) {
+                detalle.marcarNoRecibida(fechaActual, empleadoLogueado);
+            } else {
+                detalle.aceptarDocumentacion(fechaActual, empleadoLogueado);
+            }
+        }
+    }
+
+    // A4: la documentación indicada no corresponde a la CM destino; el resto se
+    // acepta.
+    public void registrarRechazos(LocalDateTime fechaActual, Empleado empleadoLogueado,
+            List<Integer> nrosDocRechazados) {
+        this.actualizarEstadoSegun(nrosDocRechazados);
+
+        for (DetalleRemito detalle : this.detalleRemito) {
+            if (detalle.contieneDocumentacion(nrosDocRechazados)) {
+                detalle.rechazarDocumentacion(fechaActual, empleadoLogueado);
+            } else {
+                detalle.aceptarDocumentacion(fechaActual, empleadoLogueado);
+            }
+        }
+    }
+
+    // Si alguna documentación del remito no se acepta, el remito queda como
+    // Recibido y Aceptado Parcial; si no, Recibido y Aceptado.
+    private void actualizarEstadoSegun(List<Integer> nrosDocNoAceptados) {
+        if (this.tieneDocumentacion(nrosDocNoAceptados)) {
+            this.estado.aceptarParcialmente(this);
+        } else {
+            this.estado.aceptarRemito(this);
+        }
+    }
+
+    private boolean tieneDocumentacion(List<Integer> nrosDoc) {
+        for (DetalleRemito detalle : this.detalleRemito) {
+            if (detalle.contieneDocumentacion(nrosDoc)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

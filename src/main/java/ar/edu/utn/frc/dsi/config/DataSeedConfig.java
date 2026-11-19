@@ -6,10 +6,13 @@ import ar.edu.utn.frc.dsi.models.estados.bolsin.BolsinEnviado;
 import ar.edu.utn.frc.dsi.models.estados.bolsin.BolsinRecibidoCMDestino;
 import ar.edu.utn.frc.dsi.models.estados.doc.EstadoDoc;
 import ar.edu.utn.frc.dsi.models.estados.doc.DocEnBolsinEnviado;
+import ar.edu.utn.frc.dsi.models.estados.doc.DocNoRecibida;
+import ar.edu.utn.frc.dsi.models.estados.doc.DocRecibidaYRechazada;
 import ar.edu.utn.frc.dsi.models.estados.doc.DocRecibidoYAceptado;
 import ar.edu.utn.frc.dsi.models.estados.remito.EstadoRemito;
 import ar.edu.utn.frc.dsi.models.estados.remito.RemitoEnviado;
 import ar.edu.utn.frc.dsi.models.estados.remito.RemitoRecibidoYAceptado;
+import ar.edu.utn.frc.dsi.models.estados.remito.RemitoRecibidoYAceptadoParcialmente;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -24,6 +27,9 @@ public class DataSeedConfig implements CommandLineRunner {
 
     private final EntityManager entityManager;
 
+    // Los ids de DetalleRemito se asignan a mano
+    private int proximoIdDetalle = 1;
+
     public DataSeedConfig(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
@@ -31,7 +37,36 @@ public class DataSeedConfig implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        // 1. Verificamos si ya hay datos para no duplicarlos cada vez que reiniciás el
+        // 1. Estados: se verifican siempre, así una base ya cargada recibe los
+        // estados nuevos (No Recibida, Recibida y Rechazada, Aceptado Parcial).
+        EstadoBolsin estadoBolsinEnviado = asegurarEstado(EstadoBolsin.class, "Enviado", () -> {
+            EstadoBolsin e = new BolsinEnviado();
+            e.setNombre("Enviado");
+            e.setDescripcion("El bolsín enviado a la comision médica de destino");
+            return e;
+        });
+        asegurarEstado(EstadoBolsin.class, "Recibido en CM destino", BolsinRecibidoCMDestino::new);
+
+        EstadoRemito estadoRemitoEnviado = asegurarEstado(EstadoRemito.class, "Enviado", () -> {
+            EstadoRemito e = new RemitoEnviado();
+            e.setNombre("Enviado");
+            e.setDescripcion("Remito enviado dentro de un bolsín");
+            return e;
+        });
+        asegurarEstado(EstadoRemito.class, "Recibido y Aceptado", RemitoRecibidoYAceptado::new);
+        asegurarEstado(EstadoRemito.class, "Recibido y Aceptado Parcial", RemitoRecibidoYAceptadoParcialmente::new);
+
+        EstadoDoc estadoDocEnviado = asegurarEstado(EstadoDoc.class, "En Bolsin Enviado", () -> {
+            EstadoDoc e = new DocEnBolsinEnviado();
+            e.setNombre("En Bolsin Enviado");
+            e.setDescripcion("...");
+            return e;
+        });
+        asegurarEstado(EstadoDoc.class, "Recibida y Aceptada", DocRecibidoYAceptado::new);
+        asegurarEstado(EstadoDoc.class, "No Recibida", DocNoRecibida::new);
+        asegurarEstado(EstadoDoc.class, "Recibida y Rechazada", DocRecibidaYRechazada::new);
+
+        // 2. Verificamos si ya hay datos para no duplicarlos cada vez que reiniciás el
         // backend
         Long count = entityManager.createQuery("SELECT count(c) FROM ComisionMedica c", Long.class).getSingleResult();
         if (count > 0) {
@@ -40,19 +75,12 @@ public class DataSeedConfig implements CommandLineRunner {
 
         System.out.println("Inyectando datos de prueba para Bolsines...");
 
-        // 2. Comisiones Médicas
-        ComisionMedica cmCordoba = new ComisionMedica();
-        cmCordoba.setCodigo(1L);
-        cmCordoba.setNombre("Comisión Médica Córdoba");
+        // 3. Comisiones Médicas
+        ComisionMedica cmCordoba = crearComisionMedica(1L, "Comisión Médica Córdoba");
+        ComisionMedica cmMendoza = crearComisionMedica(2L, "Comisión Médica Mendoza");
+        ComisionMedica cmRosario = crearComisionMedica(3L, "Comisión Médica Rosario");
 
-        ComisionMedica cmMendoza = new ComisionMedica();
-        cmMendoza.setCodigo(2L);
-        cmMendoza.setNombre("Comisión Médica Mendoza");
-
-        entityManager.persist(cmCordoba);
-        entityManager.persist(cmMendoza);
-
-        // 3. Empleado Logueado, Usuario y Sesión
+        // 4. Empleado Logueado, Usuario y Sesión
         Empleado empLogueado = new Empleado();
         empLogueado.setId(1L);
         empLogueado.setNombre("Hugo Francisco");
@@ -72,150 +100,126 @@ public class DataSeedConfig implements CommandLineRunner {
         sesion.setFechaHoraInicio(LocalDateTime.now());
         entityManager.persist(sesion);
 
-        // 4. Tipos de Documento
-        TipoDoc tdDictamen = new TipoDoc();
-        tdDictamen.setNombre("Dictamen");
+        // 5. Tipos de Documento
+        TipoDoc tdDictamen = crearTipoDoc("Dictamen");
+        TipoDoc tdEstudio = crearTipoDoc("Estudio médico");
+        TipoDoc tdCarta = crearTipoDoc("Carta documento");
 
-        TipoDoc tdEstudio = new TipoDoc();
-        tdEstudio.setNombre("Estudio médico");
+        // 6. Bolsín 1042 (Mendoza -> Córdoba). Pensado para el flujo básico.
+        Bolsin b1042 = crearBolsin(1042, 508231, cmMendoza, cmCordoba, estadoBolsinEnviado, empLogueado);
+        Documentacion doc1 = crearDocumentacion(1, "Dictamen médico - Exp. 44.120/26", tdDictamen, cmMendoza,
+                estadoDocEnviado, empLogueado);
+        Documentacion doc2 = crearDocumentacion(2, "Estudio de columna lumbosacra", tdEstudio, cmMendoza,
+                estadoDocEnviado, empLogueado);
+        Documentacion doc3 = crearDocumentacion(3, "Notificación al empleador", tdCarta, cmMendoza,
+                estadoDocEnviado, empLogueado);
+        crearRemito(3318, b1042, estadoRemitoEnviado, doc1, doc2);
+        crearRemito(3321, b1042, estadoRemitoEnviado, doc3);
 
-        TipoDoc tdCarta = new TipoDoc();
-        tdCarta.setNombre("Carta documento");
+        // 7. Bolsín 1047 (Rosario -> Córdoba). Pensado para A3: falta documentación.
+        Bolsin b1047 = crearBolsin(1047, 508377, cmRosario, cmCordoba, estadoBolsinEnviado, empLogueado);
+        Documentacion doc4 = crearDocumentacion(4, "Dictamen de incapacidad - Exp. 45.002/26", tdDictamen,
+                cmRosario, estadoDocEnviado, empLogueado);
+        Documentacion doc5 = crearDocumentacion(5, "Resonancia de rodilla derecha", tdEstudio, cmRosario,
+                estadoDocEnviado, empLogueado);
+        Documentacion doc6 = crearDocumentacion(6, "Citación a junta médica", tdCarta, cmRosario,
+                estadoDocEnviado, empLogueado);
+        crearRemito(3325, b1047, estadoRemitoEnviado, doc4, doc5);
+        crearRemito(3326, b1047, estadoRemitoEnviado, doc6);
 
-        entityManager.persist(tdDictamen);
-        entityManager.persist(tdEstudio);
-        entityManager.persist(tdCarta);
+        // 8. Bolsín 1051 (Mendoza -> Córdoba). Pensado para A4: documentación que
+        // no corresponde al destino.
+        Bolsin b1051 = crearBolsin(1051, 509012, cmMendoza, cmCordoba, estadoBolsinEnviado, empLogueado);
+        Documentacion doc7 = crearDocumentacion(7, "Dictamen médico - Exp. 44.388/26", tdDictamen, cmMendoza,
+                estadoDocEnviado, empLogueado);
+        Documentacion doc8 = crearDocumentacion(8, "Estudio audiométrico", tdEstudio, cmMendoza,
+                estadoDocEnviado, empLogueado);
+        crearRemito(3330, b1051, estadoRemitoEnviado, doc7, doc8);
 
-        // 5. Estados (Asumiendo que las clases hijas de Estado ya son @Entity)
-        EstadoBolsin estadoBolsinEnviado = new BolsinEnviado();
-        estadoBolsinEnviado.setNombre("Enviado");
-        estadoBolsinEnviado.setDescripcion("El bolsín enviado a la comision médica de destino");
-        entityManager.persist(estadoBolsinEnviado);
+        System.out.println("Datos inyectados con éxito.");
+    }
 
-        EstadoRemito estadoRemitoEnviado = new RemitoEnviado();
-        estadoRemitoEnviado.setNombre("Enviado");
-        estadoRemitoEnviado.setDescripcion("Remito enviado dentro de un bolsín");
-        entityManager.persist(estadoRemitoEnviado);
+    private <T> T asegurarEstado(Class<T> claseRaiz, String nombre, java.util.function.Supplier<T> crear) {
+        T existente = entityManager.find(claseRaiz, nombre);
+        if (existente != null) {
+            return existente;
+        }
+        T nuevo = crear.get();
+        entityManager.persist(nuevo);
+        return nuevo;
+    }
 
-        EstadoBolsin estadoBolsinRecibido = new BolsinRecibidoCMDestino();
-        entityManager.persist(estadoBolsinRecibido);
+    private ComisionMedica crearComisionMedica(Long codigo, String nombre) {
+        ComisionMedica cm = new ComisionMedica();
+        cm.setCodigo(codigo);
+        cm.setNombre(nombre);
+        entityManager.persist(cm);
+        return cm;
+    }
 
-        EstadoRemito estadoRemitoAceptado = new RemitoRecibidoYAceptado();
-        entityManager.persist(estadoRemitoAceptado);
+    private TipoDoc crearTipoDoc(String nombre) {
+        TipoDoc td = new TipoDoc();
+        td.setNombre(nombre);
+        entityManager.persist(td);
+        return td;
+    }
 
-        EstadoDoc estadoDocEnviado = new DocEnBolsinEnviado();
-        estadoDocEnviado.setNombre("En Bolsin Enviado");
-        estadoDocEnviado.setDescripcion("...");
-        entityManager.persist(estadoDocEnviado);
-
-        EstadoDoc estadoDocAceptado = new DocRecibidoYAceptado();
-        entityManager.persist(estadoDocAceptado);
-
-        // 6. Bolsín 1042 (De Mendoza a Córdoba)
+    private Bolsin crearBolsin(int nroBolsin, int nroPrecinto, ComisionMedica origen, ComisionMedica destino,
+            EstadoBolsin estado, Empleado empleado) {
         Bolsin bolsin = new Bolsin();
-        bolsin.setNroBolsin(1042);
-        bolsin.setNroPrecinto(508231);
+        bolsin.setNroBolsin(nroBolsin);
+        bolsin.setNroPrecinto(nroPrecinto);
         bolsin.setFecha(LocalDate.now());
-        bolsin.setComisionMedicaOrigen(cmMendoza);
-        bolsin.setComisionMedicaDestino(cmCordoba);
+        bolsin.setComisionMedicaOrigen(origen);
+        bolsin.setComisionMedicaDestino(destino);
         bolsin.setRemito(new ArrayList<>());
         bolsin.setCambioEstadoBolsin(new ArrayList<>());
 
-        // Cambio de Estado del Bolsín a "Enviado"
-        CambioEstadoBolsin ceb = new CambioEstadoBolsin(
-                LocalDateTime.now().minusDays(2),
-                estadoBolsinEnviado,
-                empLogueado,
-                bolsin);
-        // Como CEB tiene el boolean sosActual() basado en fechaHoraFin == null, no
-        // seteamos fecha fin.
-        bolsin.getCambioEstadoBolsin().add(ceb);
-        bolsin.setEstado(estadoBolsinEnviado);
+        // Cambio de estado actual (sin fecha fin) a "Enviado"
+        bolsin.getCambioEstadoBolsin().add(new CambioEstadoBolsin(
+                LocalDateTime.now().minusDays(2), estado, empleado, bolsin));
+        bolsin.setEstado(estado);
 
         entityManager.persist(bolsin);
+        return bolsin;
+    }
 
-        // 7. Documentación
-        Documentacion doc1 = new Documentacion();
-        doc1.setNroDoc(1);
-        doc1.setAsunto("Dictamen médico - Exp. 44.120/26");
-        doc1.setTipoDoc(tdDictamen);
+    private Documentacion crearDocumentacion(int nroDoc, String asunto, TipoDoc tipo, ComisionMedica origen,
+            EstadoDoc estado, Empleado empleado) {
+        Documentacion doc = new Documentacion();
+        doc.setNroDoc(nroDoc);
+        doc.setAsunto(asunto);
+        doc.setTipoDoc(tipo);
+        doc.setComisionMedicaOrigen(origen);
+        doc.setCambioEstado(new ArrayList<>());
 
-        Documentacion doc2 = new Documentacion();
-        doc2.setNroDoc(2);
-        doc2.setAsunto("Estudio de columna lumbosacra");
-        doc2.setTipoDoc(tdEstudio);
+        // Cambio de estado actual (sin fecha fin) a "En Bolsín Enviado"
+        doc.getCambioEstado().add(new CambioEstadoDoc(
+                LocalDateTime.now().minusDays(2), estado, empleado, doc));
+        doc.setEstado(estado);
 
-        Documentacion doc3 = new Documentacion();
-        doc3.setNroDoc(3);
-        doc3.setAsunto("Notificación al empleador");
-        doc3.setTipoDoc(tdCarta);
+        entityManager.persist(doc);
+        return doc;
+    }
 
-        doc1.setCambioEstado(new ArrayList<>());
-        doc1.getCambioEstado().add(new CambioEstadoDoc(
-                LocalDateTime.now().minusDays(2),
-                estadoDocEnviado,
-                empLogueado,
-                doc1));
+    private Remito crearRemito(int nroRemito, Bolsin bolsin, EstadoRemito estado, Documentacion... docs) {
+        Remito remito = new Remito();
+        remito.setNroRemito(nroRemito);
+        remito.setFecha(LocalDate.now().minusDays(3));
+        remito.setBolsin(bolsin);
+        remito.setEstado(estado);
+        remito.setDetalleRemito(new ArrayList<>());
 
-        doc1.setEstado(estadoDocEnviado);
-        entityManager.persist(doc1);
+        for (Documentacion doc : docs) {
+            DetalleRemito detalle = new DetalleRemito();
+            detalle.setId(proximoIdDetalle++);
+            detalle.setRemito(remito);
+            detalle.setDocumentacion(doc);
+            remito.getDetalleRemito().add(detalle);
+        }
 
-        doc2.setCambioEstado(new ArrayList<>());
-        doc2.getCambioEstado().add(new CambioEstadoDoc(
-                LocalDateTime.now().minusDays(2),
-                estadoDocEnviado,
-                empLogueado,
-                doc2));
-
-        doc2.setEstado(estadoDocEnviado);
-        entityManager.persist(doc2);
-
-        doc3.setCambioEstado(new ArrayList<>());
-        doc3.getCambioEstado().add(new CambioEstadoDoc(
-                LocalDateTime.now().minusDays(2),
-                estadoDocEnviado,
-                empLogueado,
-                doc3));
-
-        doc3.setEstado(estadoDocEnviado);
-        entityManager.persist(doc3);
-
-        // 8. Remito 3318 (Tiene Doc 1 y 2)
-        Remito r1 = new Remito();
-        r1.setNroRemito(3318);
-        r1.setBolsin(bolsin);
-        r1.setEstado(estadoRemitoEnviado);
-        r1.setDetalleRemito(new ArrayList<>());
-
-        DetalleRemito dr1 = new DetalleRemito();
-        dr1.setId(1);
-        dr1.setRemito(r1);
-        dr1.setDocumentacion(doc1);
-
-        DetalleRemito dr2 = new DetalleRemito();
-        dr2.setId(2);
-        dr2.setRemito(r1);
-        dr2.setDocumentacion(doc2);
-
-        r1.getDetalleRemito().add(dr1);
-        r1.getDetalleRemito().add(dr2);
-        entityManager.persist(r1);
-
-        // 9. Remito 3321 (Tiene Doc 3)
-        Remito r2 = new Remito();
-        r2.setNroRemito(3321);
-        r2.setBolsin(bolsin);
-        r2.setEstado(estadoRemitoEnviado);
-        r2.setDetalleRemito(new ArrayList<>());
-
-        DetalleRemito dr3 = new DetalleRemito();
-        dr3.setId(3);
-        dr3.setRemito(r2);
-        dr3.setDocumentacion(doc3);
-
-        r2.getDetalleRemito().add(dr3);
-        entityManager.persist(r2);
-
-        System.out.println("Datos inyectados con éxito.");
+        bolsin.getRemito().add(remito);
+        entityManager.persist(remito);
+        return remito;
     }
 }

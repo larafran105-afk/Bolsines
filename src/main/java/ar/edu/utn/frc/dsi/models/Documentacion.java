@@ -101,6 +101,14 @@ public class Documentacion {
         estadoActual.aceptarDocumentacion(this, fechaActual, empleadoLogueado, this.cambioEstado);
     }
 
+    public void marcarNoRecibida(LocalDateTime fechaActual, Empleado empleadoLogueado) {
+        estadoActual.marcarNoRecibida(this, fechaActual, empleadoLogueado, this.cambioEstado);
+    }
+
+    public void rechazarDocumentacion(LocalDateTime fechaActual, Empleado empleadoLogueado) {
+        estadoActual.rechazarDocumentacion(this, fechaActual, empleadoLogueado, this.cambioEstado);
+    }
+
     public void agregarCambioEstado(CambioEstadoDoc nuevoCambioEstado) {
         this.cambioEstado.add(nuevoCambioEstado);
     }

@@ -40,4 +40,17 @@ public abstract class EstadoDoc {
         throw new IllegalStateException("La documentación en estado " + getNombre() + " no puede aceptarse");
     }
 
+    // A3: la documentación no llegó en el bolsín.
+    public void marcarNoRecibida(Documentacion documentacion, LocalDateTime fechaActual, Empleado empleadoLogueado,
+            List<CambioEstadoDoc> cambioEstado) {
+        throw new IllegalStateException(
+                "La documentación en estado " + getNombre() + " no puede marcarse como no recibida");
+    }
+
+    // A4: la documentación no corresponde a la CM destino.
+    public void rechazarDocumentacion(Documentacion documentacion, LocalDateTime fechaActual,
+            Empleado empleadoLogueado, List<CambioEstadoDoc> cambioEstado) {
+        throw new IllegalStateException("La documentación en estado " + getNombre() + " no puede rechazarse");
+    }
+
 }

@@ -14,6 +14,8 @@
   │ mostrarDatosRemitos()            │ panel de detalle: remitos y documentación     │
   │ solicitarOpcionRecepcion()       │ tarjetas de opciones 1..4                     │
   │ tomarSelecRecepcion(op)          │ tomarSelecRecepcion(op)                       │
+  │ solicitarSeleccionDocumentacion()│ casillas en la documentación (A3/A4)          │
+  │ tomarSeleccionDocumentacion()    │ tomarSeleccionDocumentacion()                 │
   │ solicitarConfirmacion()          │ modal de confirmación                         │
   │ tomarConfirmacion("S"/"N")       │ tomarConfirmacion('S' | 'N')                  │
   │ mostrarMensajeExito()            │ banner/pantalla de éxito + toast              │
@@ -26,9 +28,11 @@
 
   Contrato REST esperado (prefijo /api/recepcion-bolsin):
     POST /iniciar        {}                       -> { comisionMedica:{nombre}, bolsines:[{nroBolsin,cmOrigen,nroPrecinto,fechaEnvio,cantRemitos}] }
-    POST /seleccion      { nroBolsin }             -> { remitos:[{nroRemito, documentos:[{asunto,tipoDocumento}]}] }
-    POST /opcion         { opcion }               -> { requiereConfirmacion:true }
-    POST /confirmacion   { respuesta:'S'|'N' }    -> { exito:boolean, mensaje:string }
+    POST /seleccion      { nroBolsin }             -> { remitos:[{nroRemito, documentos:[{nroDoc,asunto,tipoDocumento}]}] }
+    POST /opcion         { opcion }               -> { requiereConfirmacion:true } | { requiereSeleccionDocumentacion:true }
+    POST /documentacion  { nrosDoc:[...] }         -> { requiereConfirmacion:true }
+    POST /confirmacion   { respuesta:'S'|'N' }    -> { exito:boolean, mensaje:string } | { solicitarOpcion:true }
+    Errores de validación -> HTTP 400 { exito:false, mensaje }
 
   Dependencias:  npm i lucide-vue-next   (Tailwind ya configurado en el proyecto)
   Para trabajar sin backend dejar USE_MOCK = true; para conectar con Spring Boot, ponerlo en false.
@@ -53,7 +57,10 @@ async function http(path, body = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
-  if (!res.ok) throw new Error(`Error ${res.status}`)
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}))
+    throw new Error(error.mensaje || `Error ${res.status}`)
+  }
   return res.json()
 }
 
@@ -77,21 +84,25 @@ const MOCK = {
     return {
       remitos: [
         { nroRemito: 3318, documentos: [
-          { asunto: 'Dictamen médico - Exp. 44.120/26', tipoDocumento: 'Dictamen' },
-          { asunto: 'Estudio de columna lumbosacra', tipoDocumento: 'Estudio médico' }
+          { nroDoc: 1, asunto: 'Dictamen médico - Exp. 44.120/26', tipoDocumento: 'Dictamen' },
+          { nroDoc: 2, asunto: 'Estudio de columna lumbosacra', tipoDocumento: 'Estudio médico' }
         ] },
         { nroRemito: 3321, documentos: [
-          { asunto: 'Notificación al empleador', tipoDocumento: 'Carta documento' }
+          { nroDoc: 3, asunto: 'Notificación al empleador', tipoDocumento: 'Carta documento' }
         ] }
       ]
     }
   },
-  async '/opcion'() { await wait(250); return { requiereConfirmacion: true } },
+  async '/opcion'(b) {
+    await wait(250)
+    return b.opcion === 1 ? { requiereConfirmacion: true } : { requiereSeleccionDocumentacion: true }
+  },
+  async '/documentacion'() { await wait(250); return { requiereConfirmacion: true } },
   async '/confirmacion'(b) {
     await wait(700)
     return b.respuesta === 'S'
       ? { exito: true, mensaje: 'Recepción registrada correctamente.' }
-      : { exito: false, mensaje: 'Registro cancelado.' }
+      : { solicitarOpcion: true }
   }
 }
 const call = (path, body) => (USE_MOCK ? MOCK[path](body) : http(path, body))
@@ -102,6 +113,9 @@ const bolsines = ref([])
 const bolsinElegido = ref(null)
 const remitos = ref([])
 const opcionElegida = ref(null)
+const opcionRegistrada = ref(null)
+const seleccionandoDocs = ref(false)
+const docsMarcados = ref([])
 
 const cargandoLista = ref(true)
 const cargandoDetalle = ref(false)
@@ -127,10 +141,28 @@ const totalDocumentos = computed(() => remitos.value.reduce((n, r) => n + r.docu
 
 const opciones = [
   { id: 1, titulo: 'El contenido del bolsín es igual al registrado', detalle: 'Remitos y documentación pasan a Recibida y Aceptada.', activa: true },
-  { id: 2, titulo: 'No se recibe toda la documentación asociada a los remitos', detalle: 'La documentación faltante queda como No recibida.', activa: false },
-  { id: 3, titulo: 'Existe documentación que no corresponde al destino', detalle: 'Se marca como Recibida y Rechazada.', activa: false },
+  { id: 2, titulo: 'No se recibe toda la documentación asociada a los remitos', detalle: 'La documentación faltante queda como No recibida.', activa: true },
+  { id: 3, titulo: 'Existe documentación que no corresponde al destino', detalle: 'Se marca como Recibida y Rechazada.', activa: true },
   { id: 4, titulo: 'La documentación se debe redirigir a otra área', detalle: 'Solo para la Comisión Médica Central.', activa: false }
 ]
+
+// Textos que dependen de la opción elegida (selección de documentación, modal y éxito)
+const textosOpcion = {
+  1: {
+    confirmacion: 'Vas a registrar que el contenido del bolsín es igual al registrado. Los remitos y la documentación pasarán a Recibida y Aceptada a tu nombre.',
+    exito: 'Los remitos y la documentación figuran como recibidos y aceptados.'
+  },
+  2: {
+    seleccion: 'Marcá la documentación que NO llegó en el bolsín.',
+    confirmacion: 'La documentación marcada pasará a No Recibida y el resto a Recibida y Aceptada. Los remitos con faltantes quedarán como Recibido y Aceptado Parcial.',
+    exito: 'La documentación faltante quedó como No Recibida y el resto como Recibida y Aceptada.'
+  },
+  3: {
+    seleccion: 'Marcá la documentación que NO corresponde a esta comisión médica.',
+    confirmacion: 'La documentación marcada pasará a Recibida y Rechazada y el resto a Recibida y Aceptada. Los remitos afectados quedarán como Recibido y Aceptado Parcial.',
+    exito: 'La documentación que no corresponde quedó como Recibida y Rechazada y el resto como Recibida y Aceptada.'
+  }
+}
 
 /* ───────────────────────── Acciones (equivalentes a la Boundary Java) ───────────────────────── */
 async function opcionRegRecepBolsin() {
@@ -157,7 +189,7 @@ async function tomarSeleccionBolsin(bolsin) {
     const data = await call('/seleccion', { nroBolsin: bolsin.nroBolsin })
     remitos.value = data.remitos // mostrarDatosRemitos
   } catch (e) {
-    errorMsg.value = 'No se pudieron obtener los remitos del bolsín.'
+    errorMsg.value = e.message || 'No se pudieron obtener los remitos del bolsín.'
   } finally {
     cargandoDetalle.value = false
   }
@@ -165,28 +197,59 @@ async function tomarSeleccionBolsin(bolsin) {
 
 async function tomarSelecRecepcion(opcion) {
   opcionElegida.value = opcion
+  seleccionandoDocs.value = false
+  docsMarcados.value = []
   try {
     const data = await call('/opcion', { opcion })
-    if (data.requiereConfirmacion) mostrarModal.value = true // solicitarConfirmacion
+    if (data.requiereSeleccionDocumentacion) seleccionandoDocs.value = true // solicitarSeleccionDocumentacion (A3/A4)
+    else if (data.requiereConfirmacion) mostrarModal.value = true // solicitarConfirmacion
   } catch (e) {
-    errorMsg.value = 'No se pudo registrar la opción seleccionada.'
+    errorMsg.value = e.message || 'No se pudo registrar la opción seleccionada.'
     opcionElegida.value = null
   }
+}
+
+async function tomarSeleccionDocumentacion() {
+  if (!docsMarcados.value.length) {
+    errorMsg.value = 'Marcá al menos una documentación para continuar.'
+    return
+  }
+  errorMsg.value = ''
+  try {
+    const data = await call('/documentacion', { nrosDoc: docsMarcados.value })
+    if (data.requiereConfirmacion) mostrarModal.value = true // solicitarConfirmacion
+  } catch (e) {
+    errorMsg.value = e.message || 'No se pudo registrar la documentación seleccionada.'
+  }
+}
+
+function cancelarSeleccionDocumentacion() {
+  seleccionandoDocs.value = false
+  docsMarcados.value = []
+  opcionElegida.value = null
 }
 
 async function tomarConfirmacion(respuesta) {
   mostrarModal.value = false
   if (respuesta === 'N') {
-    await call('/confirmacion', { respuesta })
-    opcionElegida.value = null // A6: no confirma, vuelve a elegir opción
+    // A6: no confirma, el gestor vuelve a solicitar la opción de recepción
+    try {
+      await call('/confirmacion', { respuesta })
+    } catch (e) {
+      errorMsg.value = e.message
+    }
+    cancelarSeleccionDocumentacion()
     return
   }
   procesando.value = true
   try {
     const data = await call('/confirmacion', { respuesta })
-    if (data.exito) mostrarMensajeExito(data.mensaje)
+    if (data.exito) {
+      opcionRegistrada.value = opcionElegida.value
+      mostrarMensajeExito(data.mensaje)
+    }
   } catch (e) {
-    errorMsg.value = 'No se pudo completar el registro de la recepción.'
+    errorMsg.value = e.message || 'No se pudo completar el registro de la recepción.'
   } finally {
     procesando.value = false
   }
@@ -202,14 +265,14 @@ async function registrarOtra() {
   recepcionExitosa.value = false
   bolsinElegido.value = null
   remitos.value = []
-  opcionElegida.value = null
+  cancelarSeleccionDocumentacion()
   await opcionRegRecepBolsin()
 }
 
 function volverAlListado() {
   bolsinElegido.value = null
   remitos.value = []
-  opcionElegida.value = null
+  cancelarSeleccionDocumentacion()
 }
 
 const fmtFecha = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('es-AR')
@@ -337,7 +400,7 @@ const kpis = [
           <h2 class="mt-4 text-xl font-semibold text-[#10233A]">Bolsín recibido</h2>
           <p class="mt-1 text-slate-600 max-w-md mx-auto">
             El bolsín Nº {{ bolsinElegido?.nroBolsin }} (precinto {{ bolsinElegido?.nroPrecinto }}) quedó en estado
-            <strong>Recibido en CM destino</strong>. Los remitos y la documentación figuran como recibidos y aceptados.
+            <strong>Recibido en CM destino</strong>. {{ textosOpcion[opcionRegistrada]?.exito }}
             Se notificó por correo a la comisión médica de origen.
           </p>
           <button @click="registrarOtra"
@@ -444,11 +507,19 @@ const kpis = [
                   </div>
                   <table class="w-full text-sm">
                     <thead class="text-left text-slate-500">
-                      <tr><th class="px-3 py-2 font-medium">Asunto</th><th class="px-3 py-2 font-medium">Tipo de documento</th></tr>
+                      <tr>
+                        <th v-if="seleccionandoDocs" class="px-3 py-2 w-8"><span class="sr-only">Marcar</span></th>
+                        <th class="px-3 py-2 font-medium">Asunto</th><th class="px-3 py-2 font-medium">Tipo de documento</th>
+                      </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                      <tr v-for="(d, i) in r.documentos" :key="i">
-                        <td class="px-3 py-2">{{ d.asunto }}</td>
+                      <tr v-for="d in r.documentos" :key="d.nroDoc"
+                        :class="seleccionandoDocs && docsMarcados.includes(d.nroDoc) ? 'bg-amber-50' : ''">
+                        <td v-if="seleccionandoDocs" class="px-3 py-2">
+                          <input type="checkbox" :value="d.nroDoc" v-model="docsMarcados" :id="`doc-${d.nroDoc}`"
+                            class="w-4 h-4 accent-[#1F5FA8]" />
+                        </td>
+                        <td class="px-3 py-2"><label :for="`doc-${d.nroDoc}`">{{ d.asunto }}</label></td>
                         <td class="px-3 py-2 text-slate-600">{{ d.tipoDocumento }}</td>
                       </tr>
                     </tbody>
@@ -484,6 +555,20 @@ const kpis = [
                     </span>
                   </div>
                 </button>
+                <div v-if="seleccionandoDocs" class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
+                  <p class="font-medium text-amber-900">{{ textosOpcion[opcionElegida]?.seleccion }}</p>
+                  <p class="mt-1 text-amber-800">Usá las casillas del listado de remitos. Marcadas: {{ docsMarcados.length }}.</p>
+                  <div class="mt-3 flex justify-end gap-2">
+                    <button @click="cancelarSeleccionDocumentacion"
+                      class="h-8 px-3 rounded-md border border-slate-300 bg-white text-sm hover:bg-slate-100">
+                      Cancelar
+                    </button>
+                    <button @click="tomarSeleccionDocumentacion" :disabled="!docsMarcados.length"
+                      class="h-8 px-3 rounded-md bg-[#1F5FA8] text-white text-sm font-medium hover:bg-[#194f8c] disabled:opacity-50 disabled:cursor-not-allowed">
+                      Continuar
+                    </button>
+                  </div>
+                </div>
                 <p v-if="procesando" class="flex items-center gap-2 text-sm text-slate-500">
                   <Loader2 class="w-4 h-4 animate-spin" /> Registrando recepción…
                 </p>
@@ -504,8 +589,10 @@ const kpis = [
           </div>
           <h3 id="titulo-confirmacion" class="mt-4 text-lg font-semibold text-[#10233A]">¿Confirmás la recepción del bolsín?</h3>
           <p class="mt-2 text-sm text-slate-600">
-            Vas a registrar que el contenido del bolsín #{{ bolsinElegido?.nroBolsin }} es igual al registrado.
-            Los remitos y la documentación pasarán a <strong>Recibida y Aceptada</strong> a tu nombre.
+            Bolsín #{{ bolsinElegido?.nroBolsin }}: {{ textosOpcion[opcionElegida]?.confirmacion }}
+          </p>
+          <p v-if="opcionElegida !== 1" class="mt-2 text-sm text-slate-600">
+            Documentación marcada: <strong>{{ docsMarcados.length }}</strong>.
           </p>
         </div>
         <div class="flex justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-lg">

@@ -38,7 +38,9 @@ public abstract class EstadoRemito {
     public void aceptarRemito(Remito remito) {
         throw new IllegalStateException("El remito en estado " + getNombre() + " no puede aceptarse");
     }
-        
 
- 
+    // A3/A4: parte de la documentación del remito no se acepta.
+    public void aceptarParcialmente(Remito remito) {
+        throw new IllegalStateException("El remito en estado " + getNombre() + " no puede aceptarse parcialmente");
+    }
 }

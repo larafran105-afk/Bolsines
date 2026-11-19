@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -103,20 +105,21 @@ public class PantallaAdministracionBolsines {
     }
 
     public void mostrarDatosRemitos(List<String> datosRemitos) {
+        // Cada dato llega como "nroRemito|nroDoc|asunto|tipoDoc"
         Map<String, List<Map<String, Object>>> documentosPorRemito = new LinkedHashMap<>();
 
         for (String dato : datosRemitos) {
-            int primeraComa = dato.indexOf(',');
-            int ultimaComa = dato.lastIndexOf(',');
-            if (primeraComa < 0 || primeraComa == ultimaComa) {
+            String[] partes = dato.split("\\|", 4);
+            if (partes.length < 4) {
                 continue;
             }
 
-            String nroRemito = dato.substring(0, primeraComa).trim();
+            String nroRemito = partes[0].trim();
 
             Map<String, Object> documento = new HashMap<>();
-            documento.put("asunto", dato.substring(primeraComa + 1, ultimaComa).trim());
-            documento.put("tipoDocumento", dato.substring(ultimaComa + 1).trim());
+            documento.put("nroDoc", Integer.parseInt(partes[1].trim()));
+            documento.put("asunto", partes[2].trim());
+            documento.put("tipoDocumento", partes[3].trim());
 
             documentosPorRemito.computeIfAbsent(nroRemito, k -> new ArrayList<>()).add(documento);
         }
@@ -134,6 +137,8 @@ public class PantallaAdministracionBolsines {
     }
 
     public void solicitarOpcionRecepcion() {
+        // Las opciones las dibuja el front; se le indica que vuelva a pedirlas.
+        this.respuestaParaVue.put("solicitarOpcion", true);
 
         // LO HACE EL FRONT
         // System.out.println(
@@ -159,6 +164,20 @@ public class PantallaAdministracionBolsines {
         }
 
         this.gestor.tomarSelecRecepcion(opcion);
+
+        return this.respuestaParaVue;
+    }
+
+    // A3/A4: se pide al EB que marque la documentación faltante o rechazada.
+    public void solicitarSeleccionDocumentacion() {
+        this.respuestaParaVue.put("requiereSeleccionDocumentacion", true);
+    }
+
+    @PostMapping("/documentacion")
+    public Map<String, Object> tomarSeleccionDocumentacion(@RequestBody Map<String, List<Integer>> payload) {
+        this.respuestaParaVue = new HashMap<>();
+
+        this.gestor.tomarSeleccionDocumentacion(payload.get("nrosDoc"));
 
         return this.respuestaParaVue;
     }
@@ -189,6 +208,16 @@ public class PantallaAdministracionBolsines {
     public void mostrarMensajeExito() {
         this.respuestaParaVue.put("exito", true);
         this.respuestaParaVue.put("mensaje", "Recepción registrada correctamente.");
+    }
+
+    // Los errores de validación del gestor se devuelven como 400 con un mensaje
+    // para que el front lo muestre.
+    @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
+    public ResponseEntity<Map<String, Object>> mostrarMensajeError(RuntimeException e) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("exito", false);
+        error.put("mensaje", e.getMessage());
+        return ResponseEntity.badRequest().body(error);
     }
 
 }

@@ -111,24 +111,13 @@ public class Bolsin {
             return false;
         }
 
-        for (CambioEstadoBolsin ceb : this.cambioEstadoBolsin) {
-
-            if (ceb.sosActual()) {
-
-                return ceb.sosEnviado();
-
-            }
-        }
-
-        // if (estadoActual.esEnviado())
-        // return true; ESTO ES CON EL PATRON CREO, DUDA EN SI PONERLO O NO PORQUE
-        // CAMBIA EL DIAGRAMA ORIGINAL
-
-        return false;
+        // Con el patrón State se le pregunta directamente al estado actual.
+        return this.estadoActual.esEnviado();
     }
 
+    // Se compara por código: las entidades JPA no sobrescriben equals().
     public boolean esTuCmDestino(ComisionMedica cmGestor) {
-        return this.comisionMedicaDestino.equals(cmGestor);
+        return this.comisionMedicaDestino.getCodigo().equals(cmGestor.getCodigo());
     }
 
     public String getCmOrigen() {
@@ -144,13 +133,15 @@ public class Bolsin {
             List<String> detallesProcesados = r.buscarDocumentacion();
 
             for (String detalle : detallesProcesados) {
-                datosFormateados.add(nroRemito + "," + detalle);
+                // Formato "nroRemito|nroDoc|asunto|tipoDoc"
+                datosFormateados.add(nroRemito + "|" + detalle);
             }
         }
         return datosFormateados;
 
     }
 
+    // Flujo básico (opción 1): todo el contenido se recibe y se acepta.
     public void registrarRecepcion(LocalDateTime fechaActual, Empleado empleadoLogueado) {
 
         estadoActual.registrarRecepcion(this, fechaActual, empleadoLogueado, this.cambioEstadoBolsin);
@@ -158,6 +149,39 @@ public class Bolsin {
         for (Remito r : this.remito) {
             r.aceptarRemito(fechaActual, empleadoLogueado);
         }
+    }
+
+    // A3 (opción 2): no se recibe toda la documentación.
+    public void registrarRecepcionConFaltantes(LocalDateTime fechaActual, Empleado empleadoLogueado,
+            List<Integer> nrosDocFaltantes) {
+
+        estadoActual.registrarRecepcion(this, fechaActual, empleadoLogueado, this.cambioEstadoBolsin);
+
+        for (Remito r : this.remito) {
+            r.registrarFaltantes(fechaActual, empleadoLogueado, nrosDocFaltantes);
+        }
+    }
+
+    // A4 (opción 3): hay documentación que no corresponde a la CM destino.
+    public void registrarRecepcionConRechazos(LocalDateTime fechaActual, Empleado empleadoLogueado,
+            List<Integer> nrosDocRechazados) {
+
+        estadoActual.registrarRecepcion(this, fechaActual, empleadoLogueado, this.cambioEstadoBolsin);
+
+        for (Remito r : this.remito) {
+            r.registrarRechazos(fechaActual, empleadoLogueado, nrosDocRechazados);
+        }
+    }
+
+    public boolean contieneDocumentacion(int nroDoc) {
+        for (Remito r : this.remito) {
+            for (DetalleRemito detalle : r.getDetalleRemito()) {
+                if (detalle.getDocumentacion().getNroDoc() == nroDoc) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void agregarCambioEstado(CambioEstadoBolsin nuevoCambioEstado) {
