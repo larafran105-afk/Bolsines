@@ -89,6 +89,9 @@ public class GestorRecepcionBolsin {
     }
 
     public void tomarSeleccionBolsin(Bolsin bolsinElegido) {
+        this.opcionSeleccionada = null;
+        this.nrosDocSeleccionados.clear();
+
         this.bolsinSeleccionado = this.bolsinRepository
                 .findById(bolsinElegido.getNroBolsin())
                 .orElseThrow();
@@ -155,6 +158,12 @@ public class GestorRecepcionBolsin {
     public void tomarConfirmacion(String nextLine) {
         if (this.bolsinSeleccionado == null || this.opcionSeleccionada == null) {
             throw new IllegalStateException("No hay una recepción pendiente de confirmar.");
+        }
+
+        boolean requiereDocumentacion = this.opcionSeleccionada == OPCION_NO_SE_RECIBE_TODA
+                || this.opcionSeleccionada == OPCION_NO_CORRESPONDE_DESTINO;
+        if (requiereDocumentacion && this.nrosDocSeleccionados.isEmpty()) {
+            throw new IllegalStateException("Debe seleccionar la documentación antes de confirmar.");
         }
 
         switch (nextLine) {

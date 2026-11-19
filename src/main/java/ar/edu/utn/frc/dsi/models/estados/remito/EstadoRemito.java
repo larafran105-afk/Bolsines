@@ -1,6 +1,7 @@
 package ar.edu.utn.frc.dsi.models.estados.remito;
 
 import ar.edu.utn.frc.dsi.models.Remito;
+import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
@@ -10,6 +11,7 @@ import jakarta.persistence.Table;
 @Entity 
 @Table (name = "estado_remito")
 @Inheritance (strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "dtype", length = 64)
 public abstract class EstadoRemito {
 
     @Id 
